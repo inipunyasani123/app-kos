@@ -102,7 +102,7 @@ function Grafik({ grafik }) {
                     <Pressable
                       key={b.kb}
                       role="button"
-                      aria-label={`${BULAN[b.m]}: ${rupiah(b.total)}, ${b.terisi} dari ${KAMAR.length} kamar terisi`}
+                      aria-label={`${label ? `${rupiahRingkas(b.total)}, ` : ''}${BULAN[b.m]}: ${rupiah(b.total)}, ${b.terisi} dari ${KAMAR.length} kamar terisi`}
                       aria-pressed={pilih === i}
                       onPress={() => setPilih(i)}
                       onHoverIn={() => setPilih(i)}

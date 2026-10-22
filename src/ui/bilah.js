@@ -56,7 +56,7 @@ export function BilahTab({ label, item }) {
               key={it.href}
               href={it.href}
               aria-current={aktif ? 'page' : undefined}
-              aria-label={it.jumlah ? `${it.label}, ${it.jumlah} perlu dilihat` : undefined}
+              aria-label={it.jumlah ? `${it.label} ${it.jumlah} perlu dilihat` : undefined}
               style={({ pressed }) => ({ flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 54, marginHorizontal: 1, borderRadius: 14, opacity: pressed ? 0.8 : 1, gap: 3 })}
             >
               <View style={{ width: 46, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: aktif ? W.kunyit : 'transparent' }}>
