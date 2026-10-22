@@ -1,5 +1,5 @@
 import { forwardRef } from 'react';
-import { View, Text, Pressable, ScrollView, StyleSheet, Platform, Image } from 'react-native';
+import { View, Text, Pressable, ScrollView, StyleSheet, Platform } from 'react-native';
 import { Tautan } from './Tautan';
 import { W, F, R, BAYANGAN } from '../lib/tema';
 import { Ikon } from './Ikon';
@@ -218,14 +218,6 @@ export function Layar({ children, judul, sub, kembali, kembaliLabel = 'Kembali',
   );
 }
 
-/** Foto dengan rasio tetap. Image RN-web memakai tinggi intrinsik berkas, jadi rasio diatur pembungkusnya. */
-export function Foto({ source, rasio = 4 / 3, label, style, children }) {
-  return (
-    <View style={[{ width: '100%', aspectRatio: rasio, overflow: 'hidden', backgroundColor: W.garis }, style]}>
-      <Image source={source} resizeMode="cover" aria-label={label} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} />
-      {children}
-    </View>
-  );
-}
+export { Foto } from './Foto';
 
 export const web = Platform.OS === 'web';

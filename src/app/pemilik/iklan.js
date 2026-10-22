@@ -53,7 +53,7 @@ function Pratinjau({ k }) {
   const f = fotoUntuk(k.id);
   return (
     <>
-      <Foto source={f.src} label={ALT[f.sejenis ? '12' : k.id]} style={{ borderRadius: 18 }}>
+      <Foto source={f.src} label={ALT[f.sejenis ? '12' : k.id]} style={{ borderRadius: 18 }} utama>
         <View style={{ position: 'absolute', left: 10, top: 10 }}>
           <Lencana teks="Dilihat calon penghuni" warna="gelap" ikon="mata" />
         </View>
@@ -97,7 +97,7 @@ function Pratinjau({ k }) {
   );
 }
 
-function KartuIklan({ k, hari }) {
+function KartuIklan({ k, hari, utama }) {
   const { iklan } = useToko();
   const lembar = useLembar();
   const kabar = useKabar();
@@ -105,7 +105,7 @@ function KartuIklan({ k, hari }) {
   const tautan = `${APP.url}/pemilik/iklan`;
   return (
     <View style={{ backgroundColor: W.kertas, borderRadius: 24, borderWidth: 1, borderColor: W.garis, overflow: 'hidden' }}>
-      <Foto source={f.src} label={ALT[f.sejenis ? '12' : k.id]}>
+      <Foto source={f.src} label={ALT[f.sejenis ? '12' : k.id]} utama={utama}>
         <View style={{ position: 'absolute', left: 12, top: 12 }}>
           <Pelat nomor={k.id} latar={W.hijau} teks={W.putih} ukuran={50} />
         </View>
@@ -167,7 +167,7 @@ function Isi({ data }) {
   return (
     <>
       {kosong.length ? (
-        kosong.map((k) => <KartuIklan key={k.id} k={k} hari={data.hari} />)
+        kosong.map((k, i) => <KartuIklan key={k.id} k={k} hari={data.hari} utama={i === 0} />)
       ) : (
         <View style={{ padding: 14, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: W.garisTua }}>
           <T v="kecil">Semua kamar terisi. Iklan otomatis disembunyikan.</T>
