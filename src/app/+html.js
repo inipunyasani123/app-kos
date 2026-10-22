@@ -1,3 +1,4 @@
+import { Children, isValidElement } from 'react';
 import { useServerDocumentContext } from 'expo-router/html';
 import qrcode from 'qrcode-generator';
 
@@ -16,6 +17,21 @@ function jalurQr(teks) {
   for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) d += `M${c} ${r}h1v1h-1z`;
   return { n, d };
 }
+
+// Chunk JS Expo (script defer) dimuat setelah frame pertama terlukis. Tanpa ini, bila HTML dan skrip tiba
+// bersamaan, peramban menjalankan ~1 MB JS dulu sebelum melukis halaman statis (FCP ponsel sempat 2,7 s).
+// Urutan eksekusi tetap terjaga (async = false); preload di <head> tetap mengunduhnya sejak awal.
+function pisahSkrip(nodes) {
+  const src = [];
+  const lain = [];
+  Children.forEach(nodes, (n) => {
+    if (isValidElement(n) && n.type === 'script' && n.props.src) src.push(n.props.src);
+    else lain.push(n);
+  });
+  return { src, lain };
+}
+const pemuat = (src) =>
+  `(function(){var s=${JSON.stringify(src)},d=0;function go(){if(d)return;d=1;var b=document.getElementById('bilah-demo');s.forEach(function(u){var e=document.createElement('script');e.src=u;e.async=false;document.body.insertBefore(e,b)})}requestAnimationFrame(function(){setTimeout(go,0)});setTimeout(go,3000)})();`;
 
 // Ubin tegel (sama dengan komponen Tegel) untuk latar panggung desktop, versi lembut.
 const UBIN_SVG = `<svg xmlns='http://www.w3.org/2000/svg' width='88' height='88' viewBox='0 0 40 40'><rect width='40' height='40' fill='%23F3ECDF'/><g fill='%23EDE3D5'><circle cx='0' cy='0' r='11'/><circle cx='40' cy='0' r='11'/><circle cx='0' cy='40' r='11'/><circle cx='40' cy='40' r='11'/></g><g fill='%23F3ECDF'><circle cx='0' cy='0' r='5.5'/><circle cx='40' cy='0' r='5.5'/><circle cx='0' cy='40' r='5.5'/><circle cx='40' cy='40' r='5.5'/></g><g fill='%23EEE5D8'><path d='M20 7.5C23.6 12.4 23.6 15.8 20 20 16.4 15.8 16.4 12.4 20 7.5z'/><path d='M20 7.5C23.6 12.4 23.6 15.8 20 20 16.4 15.8 16.4 12.4 20 7.5z' transform='rotate(90 20 20)'/><path d='M20 7.5C23.6 12.4 23.6 15.8 20 20 16.4 15.8 16.4 12.4 20 7.5z' transform='rotate(180 20 20)'/><path d='M20 7.5C23.6 12.4 23.6 15.8 20 20 16.4 15.8 16.4 12.4 20 7.5z' transform='rotate(270 20 20)'/></g></svg>`;
@@ -81,6 +97,7 @@ export default function Root({ children, pathname }) {
   const { headNodes, bodyNodes, htmlAttributes, bodyAttributes } = useServerDocumentContext();
   const alamat = `${SITUS}${pathname && pathname !== '/' ? pathname : '/'}`;
   const qr = jalurQr(alamat);
+  const { src, lain } = pisahSkrip(bodyNodes);
   return (
     <html lang="id" {...htmlAttributes}>
       <head>
@@ -159,8 +176,10 @@ export default function Root({ children, pathname }) {
             <p className="catatan">Dibuat dengan React Native + Expo: satu kode untuk Android, iOS, dan web. Data contoh hanya tersimpan di peramban kamu.</p>
           </aside>
         </div>
-        {bodyNodes}
+        {lain}
+        <script dangerouslySetInnerHTML={{ __html: pemuat(src) }} />
         <aside
+          id="bilah-demo"
           aria-label="Tentang situs demo ini"
           style={{ display: 'block', margin: 0, padding: '12px 16px', background: '#0f1b33', color: '#dfe6f3', font: '400 13px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif', textAlign: 'center', flex: 'none' }}
         >
