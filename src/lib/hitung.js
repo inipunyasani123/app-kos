@@ -20,6 +20,9 @@ export function nomorKuitansi(kamar, jatuh) {
 
 const METODE_SEED = ['qris', 'transfer', 'qris', 'tunai'];
 
+/** Tanggal jatuh tempo periode j, dijangkarkan ke periode fokus supaya jaraknya dari hari ini selalu tepat. */
+export const tglPeriode = (p, j) => tambahBulan(p.fokus, j - p.bulanKe);
+
 function susunPeriode(p, idx, hari, aksi) {
   const fokus = hari + p.d;
   const masuk = tambahBulan(fokus, -p.bulanKe);
@@ -27,8 +30,8 @@ function susunPeriode(p, idx, hari, aksi) {
   const parkir = p.parkir ? PARKIR : 0;
   const periode = [];
   for (let j = 0; j <= p.bulanKe + 1; j++) {
-    const jatuh = tambahBulan(masuk, j);
-    const akhir = tambahBulan(masuk, j + 1) - 1;
+    const jatuh = tambahBulan(fokus, j - p.bulanKe);
+    const akhir = tambahBulan(fokus, j + 1 - p.bulanKe) - 1;
     let bayar = aksi.bayar?.[p.kamar]?.[j] || null;
     if (!bayar && (j < p.bulanKe || (j === p.bulanKe && p.lunas))) {
       const tl = j < p.bulanKe ? p.telat[j % p.telat.length] : -1;
@@ -46,7 +49,7 @@ function susunPeriode(p, idx, hari, aksi) {
     }
     periode.push({ j, jatuh, akhir, sewa, parkir, bayar });
   }
-  return { masuk, periode, sewa, parkir };
+  return { masuk, fokus, periode, sewa, parkir };
 }
 
 function statusTagihan(per, hari) {
@@ -65,13 +68,13 @@ export function bangun(kini, aksi) {
   const hari = hariKe(kini);
 
   const penghuni = PENGHUNI.map((p, idx) => {
-    const { masuk, periode, sewa, parkir } = susunPeriode(p, idx, hari, aksi);
+    const { masuk, fokus, periode, sewa, parkir } = susunPeriode(p, idx, hari, aksi);
     const belum = periode.filter((x) => !x.bayar && x.jatuh <= hari + TERBIT_HARI);
     const lunas = periode.filter((x) => x.bayar);
     const aktif = belum[0] || lunas[lunas.length - 1];
     const st = statusTagihan(aktif, hari);
     const berikut = periode.find((x) => x.jatuh > aktif.jatuh) || null;
-    return { ...p, masuk, periode, sewa, parkir, tagihan: { ...aktif, ...st }, berikut, ingat: aksi.ingat?.[p.kamar] || null };
+    return { ...p, masuk, fokus, periode, sewa, parkir, tagihan: { ...aktif, ...st }, berikut, ingat: aksi.ingat?.[p.kamar] || null };
   });
   const penghuniBy = Object.fromEntries(penghuni.map((p) => [p.kamar, p]));
 
@@ -156,7 +159,7 @@ export function bangun(kini, aksi) {
   const tambahBln = perpanjang?.status === 'disetujui' ? perpanjang.bulan : 0;
   const kontrak = {
     mulai: demo.masuk,
-    berakhir: tambahBulan(demo.masuk, KONTRAK_BULAN + tambahBln) - 1,
+    berakhir: tglPeriode(demo, KONTRAK_BULAN + tambahBln) - 1,
     bulanJalan: demo.periode.filter((x) => x.jatuh <= hari).length,
     total: KONTRAK_BULAN + tambahBln,
     perpanjang,

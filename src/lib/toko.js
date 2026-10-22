@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { bangun, nomorKuitansi, denda as hitungDenda } from './hitung';
 import { CHAT_CEPAT } from './data';
@@ -10,13 +11,28 @@ const KOSONG = { bayar: {}, ingat: {}, tiketBaru: [], tiket: {}, kamar: {}, ikla
 
 const Ctx = createContext(null);
 
+// HTML statis dirender dengan data contoh pada waktu build. Saat hidrasi, klien membaca cap waktu yang sama
+// dari penanda di DOM, sehingga render pertama identik (tanpa hydration mismatch). Setelah itu waktu diganti ke
+// sekarang dan isian tersimpan dimuat.
+const KINI_RENDER = Date.now();
+function kiniAwal() {
+  if (Platform.OS === 'web' && typeof document !== 'undefined') {
+    const v = Number(document.getElementById('kini-bangun')?.getAttribute('data-kini'));
+    if (v) return v;
+  }
+  return KINI_RENDER;
+}
+
 export function TokoProvider({ children }) {
-  const [aksi, setAksi] = useState(null);
-  const [kini, setKini] = useState(0);
+  const [aksi, setAksi] = useState(KOSONG);
+  const [kini, setKini] = useState(kiniAwal);
+  const [kiniHtml] = useState(kini);
+  const [dimuat, setDimuat] = useState(false);
   const timer = useRef([]);
 
   useEffect(() => {
     let batal = false;
+    setKini(Date.now());
     AsyncStorage.getItem(KUNCI)
       .then((raw) => {
         if (batal) return;
@@ -28,11 +44,10 @@ export function TokoProvider({ children }) {
         }
         setKini(Date.now());
         setAksi(isi);
+        setDimuat(true);
       })
       .catch(() => {
-        if (batal) return;
-        setKini(Date.now());
-        setAksi(KOSONG);
+        if (!batal) setDimuat(true);
       });
     const t = timer.current;
     return () => {
@@ -42,7 +57,7 @@ export function TokoProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    if (!aksi) return;
+    if (!dimuat) return;
     AsyncStorage.setItem(KUNCI, JSON.stringify(aksi)).catch(() => {
       // Penyimpanan penuh atau diblokir (mode privat): coba lagi tanpa foto lampiran.
       try {
@@ -50,14 +65,14 @@ export function TokoProvider({ children }) {
         AsyncStorage.setItem(KUNCI, JSON.stringify(ringan)).catch(() => {});
       } catch {}
     });
-  }, [aksi]);
+  }, [aksi, dimuat]);
 
   const ubah = useCallback((fn) => {
     setKini(Date.now());
     setAksi((a) => fn(a));
   }, []);
 
-  const data = useMemo(() => (aksi ? bangun(kini, aksi) : null), [aksi, kini]);
+  const data = useMemo(() => bangun(kini, aksi), [aksi, kini]);
 
   const aksiAksi = useMemo(() => ({
     /** Penghuni membayar periode j (QRIS/transfer) atau pemilik mencatat bayar tunai. */
@@ -121,8 +136,13 @@ export function TokoProvider({ children }) {
     },
   }), [ubah]);
 
-  const nilai = useMemo(() => ({ data, siap: !!data, ...aksiAksi }), [data, aksiAksi]);
-  return <Ctx.Provider value={nilai}>{children}</Ctx.Provider>;
+  const nilai = useMemo(() => ({ data, siap: dimuat, ...aksiAksi }), [data, dimuat, aksiAksi]);
+  return (
+    <Ctx.Provider value={nilai}>
+      {Platform.OS === 'web' ? <View nativeID="kini-bangun" dataSet={{ kini: String(kiniHtml) }} style={{ display: 'none' }} /> : null}
+      {children}
+    </Ctx.Provider>
+  );
 }
 
 export function useToko() {

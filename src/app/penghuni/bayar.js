@@ -52,7 +52,7 @@ function Alur({ data }) {
   const p = data.demo;
   const t = p.tagihan;
   const [metode, setMetode] = useState('qris');
-  const [langkah, setLangkah] = useState(t.status === 'lunas' ? 'lunas' : 'pilih');
+  const [langkah, setLangkah] = useState('pilih');
   const [hasil, setHasil] = useState(null);
   const tm = useRef(null);
   useEffect(() => () => clearTimeout(tm.current), []);
@@ -67,7 +67,7 @@ function Alur({ data }) {
     }, 1600);
   };
 
-  if (langkah === 'lunas' && !hasil) {
+  if (t.status === 'lunas' && !hasil) {
     return (
       <Kartu style={{ gap: 10, alignItems: 'flex-start' }}>
         <Stempel />

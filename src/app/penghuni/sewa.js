@@ -5,8 +5,8 @@ import { meta } from '../../lib/meta';
 import { KOS, PENGELOLA, DEPOSIT, PEMBERITAHUAN_KELUAR, CHAT_CEPAT, TIPE } from '../../lib/data';
 import { useToko } from '../../lib/toko';
 import { rupiah } from '../../lib/uang';
-import { tgl, tambahBulan, jam, relatif, jamWib } from '../../lib/waktu';
-import { KAMAR_BY } from '../../lib/hitung';
+import { tgl, jam, relatif, jamWib } from '../../lib/waktu';
+import { KAMAR_BY, tglPeriode } from '../../lib/hitung';
 import { Layar, T, Sub, Tombol, Kartu, Kerangka, Lencana, Chip, GrupChip, BarisInfo } from '../../ui/dasar';
 import { Gantungan, Sosok } from '../../ui/motif';
 import { Ikon } from '../../ui/Ikon';
@@ -48,7 +48,7 @@ function Perpanjang({ data }) {
         <Sub level={2} v="h3">Perpanjang sewa</Sub>
         <Lencana teks={`Menunggu persetujuan ${KOS.pemilik}`} warna="kunyit" ikon="jam" />
         <T v="kecil">
-          Kamu mengajukan tambah {r.bulan} bulan {relatif(r.ts, data.kini)}. Kalau disetujui, kontrak berlaku sampai {tgl(tambahBulan(kon.mulai, kon.total + r.bulan) - 1)}.
+          Kamu mengajukan tambah {r.bulan} bulan {relatif(r.ts, data.kini)}. Kalau disetujui, kontrak berlaku sampai {tgl(tglPeriode(data.demo, kon.total + r.bulan) - 1)}.
         </T>
         <T v="mini">Coba setujui sendiri lewat mode Pemilik → Ringkas.</T>
         <Tombol jenis="garis" ukuran="kecil" label="Batalkan pengajuan" onPress={() => { batalPerpanjang(); kabar('Pengajuan perpanjangan dibatalkan.'); }} />
@@ -65,7 +65,7 @@ function Perpanjang({ data }) {
         ))}
       </GrupChip>
       <T v="kecil">
-        Kontrak baru berakhir <Text style={F.tebal}>{tgl(tambahBulan(kon.mulai, kon.total + bulan) - 1)}</Text>. Harga sewa tetap selama perpanjangan.
+        Kontrak baru berakhir <Text style={F.tebal}>{tgl(tglPeriode(data.demo, kon.total + bulan) - 1)}</Text>. Harga sewa tetap selama perpanjangan.
       </T>
       <Tombol label="Ajukan perpanjangan" ikon="ulang" onPress={() => { ajukanPerpanjang(bulan); kabar(`Pengajuan ${bulan} bulan terkirim ke ${KOS.pemilik}.`); }} />
     </Kartu>
@@ -80,10 +80,11 @@ function Akhiri({ data }) {
   const batas = data.hari + PEMBERITAHUAN_KELUAR;
   const pilihan = [];
   for (let j = 0; pilihan.length < 2 && j < 40; j++) {
-    const akhir = tambahBulan(p.masuk, j + 1) - 1;
+    const akhir = tglPeriode(p, j + 1) - 1;
     if (akhir >= batas) pilihan.push(akhir);
   }
-  const [tanggal, setTanggal] = useState(pilihan[0]);
+  const [pilihIdx, setPilihIdx] = useState(0);
+  const tanggal = pilihan[pilihIdx] ?? pilihan[0];
   const [alasan, setAlasan] = useState('Pindah kerja atau kuliah selesai');
   if (kon.akhiri)
     return (
@@ -101,8 +102,8 @@ function Akhiri({ data }) {
       <Sub level={2} v="h3">Berhenti sewa</Sub>
       <T v="kecil">Beri tahu paling lambat {PEMBERITAHUAN_KELUAR} hari sebelumnya. Tanggal keluar mengikuti akhir periode sewa.</T>
       <GrupChip label="Tanggal keluar">
-        {pilihan.map((d) => (
-          <Chip key={d} label={tgl(d)} aktif={tanggal === d} onPress={() => setTanggal(d)} kecil />
+        {pilihan.map((d, i) => (
+          <Chip key={d} label={tgl(d)} aktif={tanggal === d} onPress={() => setPilihIdx(i)} kecil />
         ))}
       </GrupChip>
       <GrupChip label="Alasan">
@@ -175,7 +176,7 @@ function Isi({ data }) {
               <View key={i} style={{ flex: 1, height: 8, borderRadius: 3, backgroundColor: i < kon.bulanJalan ? W.bata : W.garis }} />
             ))}
           </View>
-          <T v="mini">{kon.bulanJalan} dari {kon.total} bulan berjalan · tagihan tiap tanggal {new Date(p.masuk * 864e5).getUTCDate()}</T>
+          <T v="mini">{kon.bulanJalan} dari {kon.total} bulan berjalan · tagihan tiap tanggal {new Date(p.fokus * 864e5).getUTCDate()}</T>
         </View>
       </View>
 
