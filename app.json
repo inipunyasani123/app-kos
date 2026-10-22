@@ -1,24 +1,60 @@
 {
   "expo": {
-    "name": "kos",
-    "slug": "kos",
+    "name": "Grendel Kos",
+    "slug": "app-kos",
+    "scheme": "grendelkos",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "backgroundColor": "#F3ECDF",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "id.pintuweb.demo.kos"
     },
     "android": {
+      "package": "id.pintuweb.demo.kos",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#A3381F",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "output": "static",
+      "favicon": "./assets/favicon.png",
+      "name": "Grendel Kos",
+      "shortName": "Grendel",
+      "lang": "id",
+      "themeColor": "#F3ECDF",
+      "backgroundColor": "#F3ECDF"
+    },
+    "plugins": [
+      [
+        "expo-router",
+        {
+          "sitemap": false
+        }
+      ],
+      "expo-font",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Grendel memakai galeri untuk melampirkan foto kerusakan pada laporan.",
+          "cameraPermission": "Grendel memakai kamera untuk memotret kerusakan yang dilaporkan."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 160,
+          "resizeMode": "contain",
+          "backgroundColor": "#F3ECDF"
+        }
+      ]
+    ]
   }
 }
