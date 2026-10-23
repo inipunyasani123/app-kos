@@ -7,7 +7,7 @@ import { hariKe } from './waktu';
 
 // Yang disimpan hanya catatan aksi pengguna; data contoh selalu dihitung ulang dari hari ini (WIB).
 const KUNCI = 'grendel-kos:v1';
-const KOSONG = { bayar: {}, ingat: {}, tiketBaru: [], tiket: {}, kamar: {}, iklan: {}, kontrak: null, akhiri: null, chat: [], calon: [] };
+const KOSONG = { bayar: {}, ingat: {}, tiketBaru: [], tiket: {}, kamar: {}, iklan: {}, kontrak: null, akhiri: null, chat: [], calon: [], pengingat: false, dibalas: {} };
 
 const Ctx = createContext(null);
 
@@ -130,6 +130,13 @@ export function TokoProvider({ children }) {
     },
     mintaSurvei(c) {
       ubah((a) => ({ ...a, calon: [{ ...c, id: `c${Date.now()}`, ts: Date.now() }, ...a.calon] }));
+    },
+    /** Pengingat H-3 sisi penghuni (simulasi lokal). */
+    setPengingat(nyala) {
+      ubah((a) => ({ ...a, pengingat: nyala }));
+    },
+    balasCalon(id) {
+      ubah((a) => ({ ...a, dibalas: { ...a.dibalas, [id]: Date.now() } }));
     },
     aturUlang() {
       ubah(() => KOSONG);

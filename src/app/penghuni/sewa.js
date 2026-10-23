@@ -2,15 +2,15 @@ import { useState } from 'react';
 import { View, Text } from 'react-native';
 import { W, F, ANGKA } from '../../lib/tema';
 import { meta } from '../../lib/meta';
-import { KOS, PENGELOLA, DEPOSIT, PEMBERITAHUAN_KELUAR, CHAT_CEPAT, TIPE } from '../../lib/data';
+import { KOS, PENGELOLA, DEPOSIT, PEMBERITAHUAN_KELUAR, CHAT_CEPAT, TIPE, INVENTARIS_07, POTONGAN, DENDA, PARKIR, ATURAN } from '../../lib/data';
 import { useToko } from '../../lib/toko';
-import { rupiah } from '../../lib/uang';
+import { rupiah, terbilang } from '../../lib/uang';
 import { tgl, jam, relatif, jamWib } from '../../lib/waktu';
 import { KAMAR_BY, tglPeriode } from '../../lib/hitung';
-import { Layar, T, Sub, Tombol, Kartu, Kerangka, Lencana, Chip, GrupChip, BarisInfo } from '../../ui/dasar';
-import { Gantungan, Sosok } from '../../ui/motif';
+import { Layar, T, Sub, Tombol, Kartu, Kerangka, Lencana, Chip, GrupChip, BarisInfo, Ketuk, Garis } from '../../ui/dasar';
+import { Gantungan, Sosok, Gerigi, Stempel } from '../../ui/motif';
 import { Ikon } from '../../ui/Ikon';
-import { useKabar } from '../../ui/lapisan';
+import { useKabar, useLembar } from '../../ui/lapisan';
 
 export function generateMetadata() {
   return meta({
@@ -74,6 +74,7 @@ function Perpanjang({ data }) {
 
 function Akhiri({ data }) {
   const { akhiri, batalAkhiri } = useToko();
+  const lembar = useLembar();
   const kabar = useKabar();
   const kon = data.kontrak;
   const p = data.demo;
@@ -113,10 +114,134 @@ function Akhiri({ data }) {
       </GrupChip>
       <View style={{ backgroundColor: W.kapur, borderRadius: 12, padding: 10 }}>
         <BarisInfo label="Tagihan terakhir" nilai={`periode s.d. ${tgl(tanggal)}`} />
-        <BarisInfo label="Deposit kembali" nilai={rupiah(DEPOSIT)} kuat />
+        <BarisInfo label="Deposit" nilai={rupiah(DEPOSIT)} />
+        <BarisInfo label="Potongan kerusakan baru" nilai="Rp0 (belum ada)" />
+        <BarisInfo label="Perkiraan deposit kembali" nilai={rupiah(DEPOSIT)} kuat />
+        <T v="mini">Saat keluar, kamar dicek bersama {KOS.pengelola} dan dibandingkan dengan berita acara serah kunci. Kondisi yang sudah tercatat tidak dipotong.</T>
       </View>
+      <Tombol jenis="teks" ukuran="kecil" ikon="nota" label="Lihat berita acara serah kunci" onPress={() => lembar.buka({ judul: 'Berita acara serah kunci', isi: <BeritaAcara p={p} /> })} />
       <Tombol jenis="bahaya" label="Ajukan berhenti sewa" ikon="keluar" onPress={() => { akhiri(tanggal, alasan); kabar('Rencana keluar terkirim ke pengelola.'); }} />
     </Kartu>
+  );
+}
+
+function KepalaDokumen({ judul, no }) {
+  return (
+    <View style={{ gap: 2 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+        <Text style={[F.judul, { fontSize: 18, letterSpacing: 1, color: W.tinta, flex: 1 }]}>{judul}</Text>
+        <T v="mini">{no}</T>
+      </View>
+      <T v="mini">{KOS.nama} · {KOS.wilayah}</T>
+      <Garis style={{ marginTop: 6 }} />
+    </View>
+  );
+}
+
+function Kontrak({ p, kon }) {
+  const kabar = useKabar();
+  const tipe = TIPE.tegel;
+  const pasal = [
+    ['Sewa & tagihan', `Sewa ${rupiah(tipe.harga)} per bulan, parkir motor ${rupiah(PARKIR)}. Ditagih tiap tanggal ${new Date(p.fokus * 864e5).getUTCDate()}, terbit 7 hari sebelumnya.`],
+    ['Denda telat', `Tenggang ${DENDA.tenggang} hari. Setelah itu ${rupiah(DENDA.perHari)} per hari, paling banyak ${rupiah(DENDA.maks)}.`],
+    ['Perbaikan', 'Kerusakan karena pemakaian wajar ditanggung pemilik. Lapor lewat aplikasi; kerusakan karena kelalaian ditanggung penyewa.'],
+    ['Tata tertib', `${ATURAN.length} aturan kos berlaku, termasuk jam tamu dan jam tenang (lihat menu Info).`],
+    ['Keluar & deposit', `Pemberitahuan paling lambat ${PEMBERITAHUAN_KELUAR} hari. Deposit ${rupiah(DEPOSIT)} kembali paling lambat 7 hari setelah cek kamar.`],
+  ];
+  return (
+    <View style={{ backgroundColor: W.kertas, borderRadius: 16, padding: 16, gap: 10, borderWidth: 1, borderColor: W.garis }}>
+      <KepalaDokumen judul="PERJANJIAN SEWA KAMAR" no={`PSK/${String(new Date(kon.mulai * 864e5).getUTCFullYear()).slice(2)}/07`} />
+      <BarisInfo label="Pemilik" nilai={KOS.pemilikLengkap} />
+      <BarisInfo label="Penyewa" nilai={p.nama} />
+      <BarisInfo label="Kamar" nilai={`07 · Tipe Tegel · lantai 2`} />
+      <BarisInfo label="Masa sewa" nilai={`${tgl(kon.mulai)} – ${tgl(kon.berakhir)}`} kuat />
+      {pasal.map(([j, isi], i) => (
+        <View key={j} style={{ flexDirection: 'row', gap: 10 }}>
+          <Text style={[F.judul, { width: 22, fontSize: 15, color: W.bata }]}>{i + 1}.</Text>
+          <View style={{ flex: 1 }}>
+            <T v="kuat">{j}</T>
+            <T v="kecil">{isi}</T>
+          </View>
+        </View>
+      ))}
+      <T v="mini">Ditandatangani kedua pihak pada {tgl(kon.mulai)}. Dokumen ini contoh rekaan.</T>
+      <Tombol jenis="gelap" ikon="nota" label="Unduh PDF (simulasi)" onPress={() => kabar('Simulasi: PDF kontrak tersimpan di perangkat.')} />
+    </View>
+  );
+}
+
+function BeritaAcara({ p }) {
+  return (
+    <View style={{ backgroundColor: W.kertas, borderRadius: 16, padding: 16, gap: 10, borderWidth: 1, borderColor: W.garis }}>
+      <KepalaDokumen judul="BERITA ACARA SERAH KUNCI" no="BA/07" />
+      <T v="kecil">Kamar 07 diserahkan kepada {p.nama} pada {tgl(p.masuk)}, diperiksa bersama {KOS.pengelola}.</T>
+      <View role="table" aria-label="Inventaris dan kondisi kamar saat masuk">
+        {INVENTARIS_07.map((x) => (
+          <View key={x.barang} role="row" style={{ flexDirection: 'row', gap: 10, paddingVertical: 7, borderBottomWidth: 1, borderBottomColor: W.garis }}>
+            <Text role="cell" style={[F.sedang, { flex: 1, fontSize: 14, lineHeight: 19, color: W.tinta }]}>{x.barang}</Text>
+            <Text role="cell" style={[F.teks, { flex: 1, fontSize: 13.5, lineHeight: 19, color: x.kondisi.startsWith('Baik') || x.kondisi === 'Menyala' ? W.hijau : W.coklat }]}>{x.kondisi}</Text>
+          </View>
+        ))}
+      </View>
+      <T v="kuat">Potongan deposit saat keluar</T>
+      {POTONGAN.map((x) => (
+        <BarisInfo key={x.label} label={x.label} nilai={x.nominal ? `${rupiah(x.nominal)} ${x.satuan}` : x.satuan} />
+      ))}
+      <T v="mini">Engsel lemari yang longgar sejak masuk sudah diganti lewat laporan T-0398, jadi tidak dihitung kerusakan.</T>
+    </View>
+  );
+}
+
+function KuitansiDeposit({ p }) {
+  return (
+    <View>
+      <Gerigi />
+      <View style={{ backgroundColor: W.kertas, padding: 16, gap: 8 }}>
+        <KepalaDokumen judul="KUITANSI DEPOSIT" no="UK/DEP/07" />
+        <BarisInfo label="Sudah terima dari" nilai={p.nama} />
+        <BarisInfo label="Untuk" nilai="Deposit Kamar 07" />
+        <T v="kecil" style={{ fontStyle: 'italic' }}>{terbilang(DEPOSIT)}</T>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={[F.judul, ANGKA, { fontSize: 26, color: W.tinta }]}>{rupiah(DEPOSIT)}</Text>
+          <Stempel kecil tanggal={tgl(p.masuk).toUpperCase()} />
+        </View>
+        <T v="mini">Dibayar {tgl(p.masuk)}. Dikembalikan saat keluar setelah kamar dicek.</T>
+      </View>
+      <Gerigi bawah />
+    </View>
+  );
+}
+
+function Dokumen({ data }) {
+  const lembar = useLembar();
+  const p = data.demo;
+  const daftar = [
+    { judul: 'Perjanjian sewa kamar', ket: `PDF simulasi · ${tgl(data.kontrak.mulai)}`, ikon: 'nota', isi: <Kontrak p={p} kon={data.kontrak} /> },
+    { judul: 'Berita acara serah kunci', ket: `${INVENTARIS_07.length} barang dicek · acuan deposit`, ikon: 'kunci', isi: <BeritaAcara p={p} /> },
+    { judul: 'Kuitansi deposit', ket: `${rupiah(DEPOSIT)} · ${tgl(p.masuk)}`, ikon: 'dompet', isi: <KuitansiDeposit p={p} /> },
+  ];
+  return (
+    <View style={{ gap: 10 }}>
+      <Sub level={2} v="h3">Dokumen</Sub>
+      <View style={{ backgroundColor: W.kertas, borderRadius: 20, borderWidth: 1, borderColor: W.garis, overflow: 'hidden' }}>
+        {daftar.map((d, i) => (
+          <Ketuk
+            key={d.judul}
+            onPress={() => lembar.buka({ judul: d.judul, isi: d.isi })}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, minHeight: 64, borderTopWidth: i ? 1 : 0, borderTopColor: W.garis }}
+          >
+            <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: W.kapur, alignItems: 'center', justifyContent: 'center' }}>
+              <Ikon nama={d.ikon} ukuran={20} warna={W.bata} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <T v="kuat">{d.judul}</T>
+              <T v="mini">{d.ket}</T>
+            </View>
+            <Ikon nama="kanan" ukuran={18} warna={W.abu} />
+          </Ketuk>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -140,7 +265,7 @@ function Obrolan({ data }) {
           return (
             <View key={i} style={{ alignSelf: saya ? 'flex-end' : 'flex-start', maxWidth: '84%', backgroundColor: saya ? W.bata : W.kapur, borderRadius: 16, borderBottomRightRadius: saya ? 4 : 16, borderBottomLeftRadius: saya ? 16 : 4, paddingHorizontal: 12, paddingVertical: 8 }}>
               <Text style={[F.teks, { fontSize: 14, lineHeight: 20, color: saya ? W.putih : W.tinta }]}>{m.teks}</Text>
-              {m.ts ? <Text style={[F.teks, { fontSize: 11, color: saya ? '#FBE3DA' : W.abu, alignSelf: 'flex-end' }]}>{jam(m.ts)}</Text> : null}
+              {m.ts ? <Text style={[F.teks, { fontSize: 12, color: saya ? '#FBE3DA' : W.abu, alignSelf: 'flex-end' }]}>{jam(m.ts)}</Text> : null}
             </View>
           );
         })}
@@ -180,6 +305,7 @@ function Isi({ data }) {
         </View>
       </View>
 
+      <Dokumen data={data} />
       <Perpanjang data={data} />
       <Akhiri data={data} />
 

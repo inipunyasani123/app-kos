@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, Platform, Animated, Easing, AccessibilityInfo, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { W, F, ANGKA } from '../../lib/tema';
 import { meta } from '../../lib/meta';
 import { KOS } from '../../lib/data';
 import { useToko } from '../../lib/toko';
 import { rupiah } from '../../lib/uang';
-import { tgl, namaBulan, hariTgl, jarakHari } from '../../lib/waktu';
-import { Layar, T, Sub, Tombol, Kartu, Kerangka, Lencana } from '../../ui/dasar';
+import { tgl, tglPendek, namaBulan, hariTgl, jarakHari, hariKe, jam } from '../../lib/waktu';
+import { Layar, T, Sub, Tombol, Kartu, Kerangka, Lencana, BarisInfo } from '../../ui/dasar';
 import { Ikon } from '../../ui/Ikon';
-import { QrSimulasi, Stempel, Tegel } from '../../ui/motif';
-import { Kuitansi } from '../../ui/kos';
-import { useKabar } from '../../ui/lapisan';
+import { QrSimulasi, Stempel, Tegel, Gantungan, Gerigi } from '../../ui/motif';
+import { Kuitansi, METODE } from '../../ui/kos';
+import { useKabar, useLembar } from '../../ui/lapisan';
 
 export function generateMetadata() {
   return meta({
@@ -46,6 +46,88 @@ function HitungMundur({ detik }) {
   return <Text style={[F.tebal, ANGKA, { fontSize: 14, color: W.bataTua }]}>Berlaku {m}.{s}</Text>;
 }
 
+/** Layar hasil: kuitansi mini tergantung pada gantungan kunci kamar + stempel LUNAS yang dicap sekali. */
+function LayarLunas({ p, per, rec, pengingat }) {
+  const { setPengingat } = useToko();
+  const lembar = useLembar();
+  const kabar = useKabar();
+  const cap = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    let batal = false;
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((kurangi) => {
+        if (batal) return;
+        if (kurangi) cap.setValue(1);
+        else Animated.timing(cap, { toValue: 1, duration: 420, delay: 180, easing: Easing.out(Easing.back(1.6)), useNativeDriver: Platform.OS !== 'web' }).start();
+      })
+      .catch(() => cap.setValue(1));
+    return () => {
+      batal = true;
+    };
+  }, [cap]);
+  const bagikan = async () => {
+    const teks = `Kuitansi ${rec.no}: ${p.nama}, sewa Kamar ${p.kamar} ${tglPendek(per.jatuh)} – ${tgl(per.akhir)}, ${rupiah(rec.total)}, lunas ${tgl(hariKe(rec.ts))} ${jam(rec.ts)} WIB.`;
+    try {
+      if (Platform.OS === 'web' && typeof navigator !== 'undefined' && !navigator.share) {
+        await navigator.clipboard?.writeText(teks);
+        kabar('Ringkasan kuitansi disalin.');
+      } else await Share.share({ message: teks });
+    } catch {
+      kabar('Tidak bisa membagikan dari peramban ini.');
+    }
+  };
+  const skala = cap.interpolate({ inputRange: [0, 1], outputRange: [1.6, 1] });
+  return (
+    <>
+      <View aria-live="polite" style={{ alignItems: 'center', gap: 2 }}>
+        <Text style={[F.judul, { fontSize: 26, lineHeight: 32, color: W.hijau, textAlign: 'center' }]}>Pembayaran diterima</Text>
+        <T v="kecil" style={{ textAlign: 'center' }}>Tagihan {namaBulan(per.jatuh, false)} lunas. {KOS.pemilik} juga melihatnya di mode pemilik.</T>
+      </View>
+      <View style={{ alignItems: 'center' }}>
+        <View style={{ zIndex: 2, marginBottom: -46, transform: [{ rotate: '-6deg' }] }}>
+          <Gantungan nomor={p.kamar} kecil />
+        </View>
+        <View style={{ alignSelf: 'stretch' }}>
+          <Gerigi />
+          <View style={{ backgroundColor: W.kertas, paddingHorizontal: 18, paddingTop: 54, paddingBottom: 16, gap: 8 }}>
+            <Text style={[F.judul, ANGKA, { fontSize: 38, lineHeight: 46, color: W.tinta, textAlign: 'center' }]}>{rupiah(rec.total)}</Text>
+            <BarisInfo label="Untuk" nilai={`Sewa ${tglPendek(per.jatuh)} – ${tglPendek(per.akhir)}`} />
+            <BarisInfo label="Lewat" nilai={METODE[rec.metode]} />
+            <BarisInfo label="Waktu" nilai={`${tglPendek(hariKe(rec.ts))}, ${jam(rec.ts)} WIB`} />
+            <BarisInfo label="No. kuitansi" nilai={rec.no} kuat />
+            <Animated.View style={{ position: 'absolute', right: 12, top: 8, opacity: cap, transform: [{ scale: skala }] }}>
+              <Stempel tanggal={tgl(hariKe(rec.ts)).toUpperCase()} kecil />
+            </Animated.View>
+          </View>
+          <Gerigi bawah />
+        </View>
+      </View>
+      <Tombol
+        label="Lihat kuitansi"
+        ikon="nota"
+        ukuran="besar"
+        penuh
+        onPress={() => lembar.buka({ judul: `Kuitansi ${namaBulan(per.jatuh)}`, isi: <Kuitansi penghuni={p} periode={per} bayar={rec} /> })}
+      />
+      <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+        <Tombol jenis="garis" ikon="bagikan" label="Bagikan" onPress={bagikan} />
+        {!pengingat ? (
+          <Tombol
+            jenis="garis"
+            ikon="lonceng"
+            label="Ingatkan bulan depan"
+            onPress={() => {
+              setPengingat(true);
+              kabar(`Pengingat H-3 dipasang untuk tagihan berikutnya (simulasi).`);
+            }}
+          />
+        ) : null}
+        <Tombol href="/penghuni" jenis="teks" ikon="rumah" label="Ke beranda" />
+      </View>
+    </>
+  );
+}
+
 function Alur({ data }) {
   const { bayar } = useToko();
   const kabar = useKabar();
@@ -78,32 +160,13 @@ function Alur({ data }) {
     );
   }
 
-  if (langkah === 'sukses' && hasil) {
-    return (
-      <>
-        <View style={{ backgroundColor: W.hijau, borderRadius: 22, padding: 16, gap: 4 }} aria-live="polite">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Ikon nama="centang" ukuran={22} warna={W.putih} tebal={2.6} />
-            <Text style={[F.judul, { fontSize: 20, color: W.putih }]}>Pembayaran diterima</Text>
-          </View>
-          <Text style={[F.teks, { fontSize: 14, lineHeight: 20, color: W.hijauMuda }]}>
-            {rupiah(hasil.rec.total)} untuk {namaBulan(hasil.per.jatuh)} sudah tercatat. {KOS.pemilik} juga melihatnya di mode pemilik.
-          </Text>
-        </View>
-        <Kuitansi penghuni={p} periode={hasil.per} bayar={hasil.rec} />
-        <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
-          <Tombol href="/penghuni/riwayat" jenis="gelap" label="Riwayat bayar" ikon="nota" />
-          <Tombol href="/penghuni" jenis="garis" label="Ke beranda" ikon="rumah" />
-        </View>
-      </>
-    );
-  }
+  if (langkah === 'sukses' && hasil) return <LayarLunas p={p} per={hasil.per} rec={hasil.rec} pengingat={data.pengingat} />;
 
   return (
     <>
       <View style={{ backgroundColor: W.tinta, borderRadius: 22, overflow: 'hidden' }}>
         <View style={{ padding: 16, gap: 2 }}>
-          <Text style={[F.pekat, { fontSize: 11, letterSpacing: 1.4, color: '#D9CDBB' }]}>KAMAR {p.kamar} · {namaBulan(t.jatuh).toUpperCase()}</Text>
+          <Text style={[F.pekat, { fontSize: 12, letterSpacing: 1.2, color: '#D9CDBB' }]}>KAMAR {p.kamar} · SEWA {tglPendek(t.jatuh).toUpperCase()} – {tglPendek(t.akhir).toUpperCase()}</Text>
           <Text style={[F.judul, ANGKA, { fontSize: 36, lineHeight: 44, color: W.kunyit }]}>{rupiah(t.total)}</Text>
           <Text style={[F.teks, { fontSize: 13, color: '#EDE4D6' }]}>
             Sewa {rupiah(t.sewa)} + parkir {rupiah(t.parkir)}{t.denda ? ` + denda ${rupiah(t.denda)}` : ''} · jatuh tempo {jarakHari(t.jatuh, data.hari)}
@@ -199,7 +262,7 @@ function Alur({ data }) {
 
       {langkah === 'proses' ? (
         <Kartu style={{ alignItems: 'center', gap: 10, paddingVertical: 24 }} aria-live="polite">
-          <ActivityIndicator color={W.bata} size="large" />
+          <ActivityIndicator color={W.bata} size="large" aria-label="Memeriksa pembayaran" />
           <T v="kuat">Memeriksa pembayaran…</T>
           <Lencana teks={Platform.OS === 'web' ? 'Simulasi di peramban' : 'Simulasi di perangkat'} />
         </Kartu>

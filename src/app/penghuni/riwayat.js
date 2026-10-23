@@ -61,7 +61,7 @@ function Isi({ data }) {
     <>
       <View style={{ flexDirection: 'row', gap: 12 }}>
         <View style={{ flex: 1.3, backgroundColor: W.tinta, borderRadius: 20, padding: 14, gap: 2 }}>
-          <Text style={[F.pekat, { fontSize: 11, letterSpacing: 1.4, color: '#D9CDBB' }]}>TOTAL DIBAYAR</Text>
+          <Text style={[F.pekat, { fontSize: 12, letterSpacing: 1.2, color: '#D9CDBB' }]}>TOTAL DIBAYAR</Text>
           <Text style={[F.judul, ANGKA, { fontSize: 24, lineHeight: 30, color: W.kunyit }]}>{rupiah(total)}</Text>
           <Text style={[F.teks, { fontSize: 12.5, color: '#EDE4D6' }]}>sejak {tgl(p.masuk)}</Text>
         </View>

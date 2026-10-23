@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { W, F, ANGKA } from '../../lib/tema';
 import { meta } from '../../lib/meta';
-import { FASILITAS, FOTO_KAMAR, KOS, APP, ATURAN, DEPOSIT } from '../../lib/data';
+import { FASILITAS, GALERI, APP } from '../../lib/data';
 import { useToko } from '../../lib/toko';
 import { rupiah } from '../../lib/uang';
 import { tgl, hariTgl, jarakHari, relatif } from '../../lib/waktu';
@@ -20,14 +20,6 @@ export function generateMetadata() {
   });
 }
 
-// Kamar 05 belum punya foto sendiri saat selesai perawatan: pakai foto kamar sejenis (tipe Tegel).
-const fotoUntuk = (id) => (id === '05' ? { src: FOTO_KAMAR['12'], sejenis: true } : { src: FOTO_KAMAR[id], sejenis: false });
-
-const ALT = {
-  '03': 'Kamar tidur dengan kasur besar, sandaran kepala kayu, lantai teraso, dan tirai jendela',
-  '10': 'Kamar sederhana berlantai kayu dengan kasur, tirai lipat, dan dinding krem',
-  '12': 'Kamar mungil dengan ranjang bersprei merah muda, lantai tegel kotak-kotak, dan jendela kaca hijau',
-};
 
 export default function Iklan() {
   const { data } = useToko();
@@ -45,76 +37,28 @@ export default function Iklan() {
   );
 }
 
-function Pratinjau({ k }) {
-  const { mintaSurvei } = useToko();
-  const kabar = useKabar();
-  const lembar = useLembar();
-  const [hari, setHari] = useState(1);
-  const f = fotoUntuk(k.id);
-  return (
-    <>
-      <Foto source={f.src} label={ALT[f.sejenis ? '12' : k.id]} style={{ borderRadius: 18 }} utama>
-        <View style={{ position: 'absolute', left: 10, top: 10 }}>
-          <Lencana teks="Dilihat calon penghuni" warna="gelap" ikon="mata" />
-        </View>
-      </Foto>
-      <View style={{ gap: 2 }}>
-        <Text style={[F.judul, { fontSize: 22, lineHeight: 28, color: W.tinta }]}>Kamar {k.id} · Tipe {k.tipeData.nama}</Text>
-        <T v="kecil">{KOS.nama}, {KOS.wilayah} · lantai {k.lantai} khusus {k.lantai === 1 ? 'putra' : 'putri'}</T>
-      </View>
-      <Text style={[F.judul, ANGKA, { fontSize: 28, color: W.bata }]}>
-        {rupiah(k.tipeData.harga)}
-        <Text style={[F.sedang, { fontSize: 14, color: W.abu }]}> /bulan · deposit {rupiah(DEPOSIT)}</Text>
-      </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {k.tipeData.fasilitas.map((x) => (
-          <View key={x} style={{ flexDirection: 'row', gap: 6, alignItems: 'center', backgroundColor: W.kertas, borderRadius: 999, borderWidth: 1, borderColor: W.garis, paddingHorizontal: 10, paddingVertical: 6 }}>
-            <Ikon nama={FASILITAS[x].ikon} ukuran={16} warna={W.bata} />
-            <Text style={[F.sedang, { fontSize: 13, color: W.tinta }]}>{FASILITAS[x].label}</Text>
-          </View>
-        ))}
-      </View>
-      <T v="kecil">Aturan singkat: {ATURAN.slice(0, 3).map((a) => `${a.judul.toLowerCase()} ${a.isi.split('.')[0].toLowerCase()}`).join('; ')}.</T>
-      <View style={{ gap: 8, backgroundColor: W.kertas, borderRadius: 16, borderWidth: 1, borderColor: W.garis, padding: 12 }}>
-        <T v="label">Minta jadwal survei</T>
-        <GrupChip label="Hari survei">
-          {[1, 2, 3].map((d) => (
-            <Chip key={d} label={hariTgl(k.hariIni + d)} aktif={hari === d} onPress={() => setHari(d)} kecil />
-          ))}
-        </GrupChip>
-        <Tombol
-          label="Kirim permintaan survei"
-          ikon="kalender"
-          penuh
-          onPress={() => {
-            mintaSurvei({ nama: 'Kamu (calon penghuni)', kamar: k.id, hariSurvei: k.hariIni + hari, jam: '16.00', pesan: 'Mau lihat kamar dulu.' });
-            lembar.tutup();
-            kabar('Simulasi: permintaan survei masuk ke pemilik.');
-          }}
-        />
-      </View>
-    </>
-  );
-}
-
 function KartuIklan({ k, hari, utama }) {
   const { iklan } = useToko();
   const lembar = useLembar();
   const kabar = useKabar();
-  const f = fotoUntuk(k.id);
-  const tautan = `${APP.url}/pemilik/iklan`;
+  const f = GALERI[k.id][0];
+  const tautan = `${APP.url}/kamar/${k.id}`;
   return (
     <View style={{ backgroundColor: W.kertas, borderRadius: 24, borderWidth: 1, borderColor: W.garis, overflow: 'hidden' }}>
-      <Foto source={f.src} label={ALT[f.sejenis ? '12' : k.id]} utama={utama}>
+      <Foto source={f.src} label={f.alt} utama={utama}>
         <View style={{ position: 'absolute', left: 12, top: 12 }}>
           <Pelat nomor={k.id} latar={W.hijau} teks={W.putih} ukuran={50} />
         </View>
         <View style={{ position: 'absolute', right: 12, top: 12 }}>
           <Lencana teks={k.iklan ? 'Tayang' : 'Draf'} warna={k.iklan ? 'hijau' : 'gelap'} ikon={k.iklan ? 'centang' : undefined} />
         </View>
+        <View style={{ position: 'absolute', right: 12, bottom: 12, backgroundColor: 'rgba(34,28,23,0.85)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3, flexDirection: 'row', gap: 4, alignItems: 'center' }}>
+          <Ikon nama="foto" ukuran={14} warna={W.kapur} />
+          <Text style={[F.sedang, { fontSize: 12, color: W.kapur }]}>{GALERI[k.id].length} foto</Text>
+        </View>
         {f.sejenis ? (
           <View style={{ position: 'absolute', left: 12, bottom: 12, backgroundColor: 'rgba(34,28,23,0.85)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <Text style={[F.sedang, { fontSize: 11.5, color: W.kapur }]}>Foto kamar sejenis</Text>
+            <Text style={[F.sedang, { fontSize: 12, color: W.kapur }]}>Foto kamar sejenis</Text>
           </View>
         ) : null}
       </Foto>
@@ -140,7 +84,7 @@ function KartuIklan({ k, hari, utama }) {
         <T v="mini">Kosong sejak {k.kosongSejak != null ? `${tgl(k.kosongSejak)} (${jarakHari(k.kosongSejak, hari)})` : 'hari ini'} · siap dihuni hari ini</T>
         <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
           <Tombol ukuran="kecil" jenis={k.iklan ? 'garis' : 'hijau'} ikon="papan" label={k.iklan ? 'Tarik iklan' : 'Tayangkan'} onPress={() => { iklan(k.id, !k.iklan); kabar(k.iklan ? `Iklan Kamar ${k.id} ditarik.` : `Iklan Kamar ${k.id} tayang.`); }} />
-          <Tombol ukuran="kecil" jenis="gelap" ikon="mata" label="Pratinjau" aksesLabel={`Pratinjau iklan Kamar ${k.id}`} onPress={() => lembar.buka({ judul: `Iklan Kamar ${k.id}`, isi: <Pratinjau k={{ ...k, hariIni: hari }} /> })} />
+          <Tombol ukuran="kecil" jenis="gelap" ikon="mata" label="Pratinjau" aksesLabel={`Pratinjau iklan Kamar ${k.id} seperti dilihat calon penghuni`} href={`/kamar/${k.id}`} />
           <Tombol
             ukuran="kecil"
             jenis="garis"
@@ -150,7 +94,7 @@ function KartuIklan({ k, hari, utama }) {
             onPress={async () => {
               try {
                 await Clipboard.setStringAsync(tautan);
-                kabar('Tautan iklan disalin (simulasi).');
+                kabar('Tautan halaman iklan disalin.');
               } catch {
                 kabar('Tidak bisa menyalin di peramban ini.');
               }
@@ -163,7 +107,10 @@ function KartuIklan({ k, hari, utama }) {
 }
 
 function Isi({ data }) {
+  const { balasCalon } = useToko();
+  const kabar = useKabar();
   const kosong = data.kamar.filter((k) => k.status === 'kosong');
+  const menunggu = data.calon.filter((c) => !data.dibalas[c.id]).length;
   return (
     <>
       {kosong.length ? (
@@ -174,19 +121,45 @@ function Isi({ data }) {
         </View>
       )}
       <View style={{ gap: 10 }}>
-        <Sub level={2} v="h3">Permintaan survei ({data.calon.length})</Sub>
-        {data.calon.map((c) => (
-          <View key={c.id} style={{ flexDirection: 'row', gap: 12, backgroundColor: W.kertas, borderRadius: 18, borderWidth: 1, borderColor: W.garis, padding: 12 }}>
-            <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: W.kunyitMuda, alignItems: 'center', justifyContent: 'center' }}>
-              <Ikon nama="kalender" ukuran={20} warna={W.coklat} />
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <T v="kuat">{c.nama} · Kamar {c.kamar}</T>
-              <T v="mini">Survei {hariTgl(c.hariSurvei)} pukul {c.jam} WIB · masuk {relatif(c.ts, data.kini)}</T>
-              {c.pesan ? <T v="kecil" warna={W.tinta}>“{c.pesan}”</T> : null}
-            </View>
+        <Sub level={2} v="h3">Calon penghuni</Sub>
+        {menunggu ? (
+          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', backgroundColor: W.kunyitMuda, borderRadius: 16, padding: 12 }}>
+            <Ikon nama="chat" ukuran={20} warna={W.coklat} />
+            <T v="kuat" warna={W.coklat} style={{ flex: 1 }}>{menunggu} calon menunggu jawaban</T>
           </View>
-        ))}
+        ) : null}
+        {data.calon.map((c) => {
+          const dibalas = data.dibalas[c.id];
+          return (
+            <View key={c.id} style={{ backgroundColor: W.kertas, borderRadius: 18, borderWidth: 1, borderColor: dibalas ? W.garis : W.kunyit, padding: 12, gap: 8 }}>
+              <View style={{ flexDirection: 'row', gap: 12 }}>
+                <View style={{ width: 42, height: 42, borderRadius: 12, backgroundColor: W.kunyitMuda, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ikon nama="kalender" ukuran={20} warna={W.coklat} />
+                </View>
+                <View style={{ flex: 1, gap: 2 }}>
+                  <T v="kuat">{c.nama} · Kamar {c.kamar}</T>
+                  <T v="mini">Survei {hariTgl(c.hariSurvei)} pukul {c.jam} WIB · masuk {relatif(c.ts, data.kini)}</T>
+                  {c.pesan ? <T v="kecil" warna={W.tinta}>“{c.pesan}”</T> : null}
+                </View>
+              </View>
+              {dibalas ? (
+                <Lencana teks={`Dibalas ${relatif(dibalas, data.kini)}`} warna="hijau" ikon="centang" />
+              ) : (
+                <Tombol
+                  ukuran="kecil"
+                  jenis="gelap"
+                  ikon="kirim"
+                  label="Balas & konfirmasi survei"
+                  aksesLabel={`Balas ${c.nama} dan konfirmasi survei`}
+                  onPress={() => {
+                    balasCalon(c.id);
+                    kabar(`Simulasi: jawaban terkirim ke ${c.nama}.`);
+                  }}
+                />
+              )}
+            </View>
+          );
+        })}
       </View>
     </>
   );

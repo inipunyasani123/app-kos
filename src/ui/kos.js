@@ -3,11 +3,11 @@ import { Svg, Path, Rect, Defs, Pattern } from './svg';
 import { useId } from 'react';
 import { W, F, ANGKA } from '../lib/tema';
 import { rupiah, terbilang } from '../lib/uang';
-import { tgl, tglPendek, tglPanjang, jam, relatif, namaBulan, hariKe, jarakHari } from '../lib/waktu';
+import { tgl, tglPendek, tglPanjang, jam, relatif, namaBulan, hariKe, jarakHari, BLN, pecah } from '../lib/waktu';
 import { KOS, STATUS_TIKET, KATEGORI, URGENSI, FOTO_KERAN, DENDA, TIPE } from '../lib/data';
 import { KAMAR_BY } from '../lib/hitung';
 import { T, Sub, Lencana, Garis } from './dasar';
-import { Gerigi, Stempel } from './motif';
+import { Gerigi, Stempel, Tegel } from './motif';
 import { Ikon } from './Ikon';
 
 export const METODE = { qris: 'QRIS', transfer: 'Transfer bank', tunai: 'Tunai ke pengelola' };
@@ -23,7 +23,7 @@ export function lencanaTagihan(t, hari) {
     case 'telat':
       return { teks: `Telat ${t.telat} hari`, warna: 'bata', ikon: 'awas' };
     default:
-      return { teks: `Jatuh tempo ${jarakHari(t.jatuh, hari)}`, warna: 'abu', ikon: 'kalender' };
+      return { teks: jarakHari(t.jatuh, hari).replace(/^./, (c) => c.toUpperCase()), warna: 'abu', ikon: 'kalender' };
   }
 }
 
@@ -146,7 +146,7 @@ export function LangkahTiket({ tiket, kini, ringkas }) {
       </View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }} aria-hidden>
         {STATUS_TIKET.map((s, i) => (
-          <Text key={s.id} style={[i === idx ? F.pekat : F.sedang, { fontSize: 10.5, color: i <= idx ? W.tinta : W.abu, textAlign: i === 0 ? 'left' : i === 3 ? 'right' : 'center', flex: 1 }]}>
+          <Text key={s.id} style={[i === idx ? F.pekat : F.sedang, { fontSize: 12, color: i <= idx ? W.tinta : W.abu, textAlign: i === 0 ? 'left' : i === 3 ? 'right' : 'center', flex: 1 }]}>
             {s.label}
           </Text>
         ))}
@@ -195,22 +195,91 @@ export function KartuTiket({ tiket, kini, aksi, tampilKamar, level = 3 }) {
 }
 
 export function AturanDenda() {
+  const pita = [
+    { teks: 'JATUH TEMPO', latar: W.tinta, warna: W.kapur, flex: 1 },
+    { teks: `+${DENDA.tenggang} HARI`, latar: W.kunyit, warna: W.tinta, flex: 0.8 },
+    { teks: 'DENDA/HARI', latar: W.bata, warna: W.putih, flex: 1 },
+  ];
   return (
     <View style={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', height: 30, borderRadius: 10, overflow: 'hidden' }} role="img" aria-label={`Jatuh tempo, lalu ${DENDA.tenggang} hari tenggang tanpa denda, setelah itu denda ${rupiah(DENDA.perHari)} per hari sampai paling banyak ${rupiah(DENDA.maks)}`}>
-        <View style={{ width: 84, backgroundColor: W.tinta, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={[F.pekat, { color: W.kapur, fontSize: 9.5 }]} numberOfLines={1}>JATUH TEMPO</Text>
-        </View>
-        <View style={{ flex: 1.1, backgroundColor: W.kunyit, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={[F.pekat, { color: W.tinta, fontSize: 9.5 }]} numberOfLines={1}>+{DENDA.tenggang} HARI TENGGANG</Text>
-        </View>
-        <View style={{ flex: 1.4, backgroundColor: W.bata, alignItems: 'center', justifyContent: 'center' }}>
-          <Text style={[F.pekat, { color: W.putih, fontSize: 9.5 }]} numberOfLines={1}>DENDA PER HARI</Text>
-        </View>
+      <View style={{ flexDirection: 'row', height: 34, borderRadius: 10, overflow: 'hidden' }} role="img" aria-label={`Jatuh tempo, lalu ${DENDA.tenggang} hari tenggang tanpa denda, setelah itu denda ${rupiah(DENDA.perHari)} per hari sampai paling banyak ${rupiah(DENDA.maks)}`}>
+        {pita.map((x) => (
+          <View key={x.teks} style={{ flex: x.flex, backgroundColor: x.latar, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={[F.pekat, { color: x.warna, fontSize: 12, letterSpacing: 0.6 }]} numberOfLines={1}>{x.teks}</Text>
+          </View>
+        ))}
       </View>
       <T v="kecil">
         Bayar sampai {DENDA.tenggang} hari setelah jatuh tempo masih tanpa denda. Mulai hari ke-{DENDA.tenggang + 1}, denda {rupiah(DENDA.perHari)} per hari, paling banyak {rupiah(DENDA.maks)}.
       </T>
+    </View>
+  );
+}
+
+/** Titik garis waktu berupa ubin tegel kecil (motif Grendel). */
+function TitikTegel({ isi, warna = 'bata' }) {
+  return (
+    <View style={{ width: 22, height: 22, borderRadius: 5, overflow: 'hidden', borderWidth: 1.5, borderColor: isi ? W.tinta : W.garisTua, backgroundColor: W.kertas }} aria-hidden>
+      {isi ? <Tegel tinggi={22} lebar={22} ubin={22} warna={warna} /> : null}
+    </View>
+  );
+}
+
+/** Garis waktu tagihan: terbit → pengingat → jatuh tempo → denda mulai (pola invoice). */
+export function GarisWaktuTagihan({ t, hari, diingatkan }) {
+  const lunas = t.status === 'lunas';
+  const hariBayar = lunas ? hariKe(t.bayar.ts) : null;
+  const titik = [
+    { label: 'Terbit', n: t.jatuh - 7 },
+    lunas ? { label: 'Dibayar', n: hariBayar, tanda: true } : { label: diingatkan ? 'Diingatkan' : 'Pengingat', n: t.jatuh - 3, redup: !diingatkan },
+    { label: 'Jatuh tempo', n: t.jatuh },
+    { label: lunas ? 'Tanpa denda' : 'Denda mulai', n: t.jatuh + DENDA.tenggang + 1, bahaya: !lunas },
+  ];
+  return (
+    <View style={{ gap: 6 }} role="list" aria-label="Garis waktu tagihan">
+      <View style={{ flexDirection: 'row' }}>
+        {titik.map((x, i) => {
+          const lewat = lunas ? x.n <= Math.max(hari, hariBayar) && !(i === 3) : x.n <= hari;
+          return (
+            <View key={x.label} role="listitem" style={{ flex: 1, alignItems: i === 0 ? 'flex-start' : i === 3 ? 'flex-end' : 'center', gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'stretch', justifyContent: i === 0 ? 'flex-start' : i === 3 ? 'flex-end' : 'center' }}>
+                {i > 0 ? <View style={{ position: 'absolute', left: 0, right: i === 3 ? 11 : '50%', height: 2, backgroundColor: lewat ? W.tinta : W.garis }} /> : null}
+                {i < 3 ? <View style={{ position: 'absolute', right: 0, left: i === 0 ? 11 : '50%', height: 2, backgroundColor: titik[i + 1].n <= hari ? W.tinta : W.garis }} /> : null}
+                <TitikTegel isi={lewat} warna={x.bahaya ? 'bata' : x.tanda ? 'hijau' : 'bata'} />
+              </View>
+              <Text style={[F.tebal, { fontSize: 12, lineHeight: 15, color: x.bahaya ? W.bataTua : W.tinta, textAlign: i === 0 ? 'left' : i === 3 ? 'right' : 'center' }]}>{x.label}</Text>
+              <Text style={[F.teks, ANGKA, { fontSize: 12, lineHeight: 15, color: W.abu, textAlign: i === 0 ? 'left' : i === 3 ? 'right' : 'center' }]}>{tglPendek(x.n)}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+const WARNA_TEPAT = { tepat: [W.hijau, W.putih], tenggang: [W.kunyit, W.tinta], telat: [W.bata, W.putih], berjalan: [W.kertas, W.abu], belum: [W.kapur, W.abu] };
+const LABEL_TEPAT = { tepat: 'tepat waktu', tenggang: 'masa tenggang', telat: 'telat', berjalan: 'belum jatuh tempo', belum: 'belum tinggal' };
+
+/** Ketepatan bayar 12 periode terakhir: 12 ubin kecil dengan huruf bulan (status juga lewat teks). */
+export function RiwayatKetepatan({ ketepatan }) {
+  const hitung = (n) => ketepatan.filter((k) => k.nilai === n).length;
+  const ringkas = `${hitung('tepat')} tepat waktu, ${hitung('tenggang')} masa tenggang, ${hitung('telat')} telat dari 12 bulan terakhir`;
+  return (
+    <View style={{ gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: 3 }} role="img" aria-label={ringkas}>
+        {ketepatan.map((k) => {
+          const [bg, fg] = WARNA_TEPAT[k.nilai];
+          return (
+            <View key={k.j} style={{ flex: 1, gap: 3, alignItems: 'center' }}>
+              <View style={{ alignSelf: 'stretch', height: 22, borderRadius: 5, backgroundColor: bg, borderWidth: k.nilai === 'belum' || k.nilai === 'berjalan' ? 1 : 0, borderColor: W.garisTua, borderStyle: k.nilai === 'berjalan' ? 'dashed' : 'solid', alignItems: 'center', justifyContent: 'center' }}>
+                {k.nilai === 'telat' ? <Text style={[F.pekat, { fontSize: 12, color: fg }]}>!</Text> : k.nilai === 'tepat' ? <Ikon nama="centang" ukuran={12} warna={fg} tebal={3} /> : null}
+              </View>
+              <Text style={[F.sedang, { fontSize: 12, color: W.abu }]}>{BLN[pecah(k.jatuh).m].slice(0, 1)}</Text>
+            </View>
+          );
+        })}
+      </View>
+      <T v="mini">{ringkas.charAt(0).toUpperCase() + ringkas.slice(1)}.</T>
     </View>
   );
 }

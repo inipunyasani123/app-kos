@@ -22,16 +22,17 @@ export const KOS = {
 };
 
 export const TIPE = {
-  teras: { nama: 'Teras', harga: 650000, ukuran: '3 × 3 m', fasilitas: ['kipas', 'kasur', 'lemari', 'meja', 'wifi', 'kmLuar'] },
+  teras: { nama: 'Teras', harga: 650000, ukuran: '3 × 3 m', fasilitas: ['kipas', 'kasur', 'lemari', 'wifi', 'kmLuar'] },
   tegel: { nama: 'Tegel', harga: 850000, ukuran: '3 × 4 m', fasilitas: ['kipas', 'kasur', 'lemari', 'meja', 'wifi', 'kmDalam'] },
-  jendela: { nama: 'Jendela', harga: 1150000, ukuran: '3,5 × 4 m', fasilitas: ['ac', 'kasur', 'lemari', 'meja', 'wifi', 'kmDalam', 'jendela'] },
+  jendela: { nama: 'Jendela', harga: 1150000, ukuran: '3,5 × 4 m', fasilitas: ['ac', 'kasur120', 'meja', 'wifi', 'kmDalam', 'jendela'] },
 };
 
 export const FASILITAS = {
   ac: { label: 'AC', ikon: 'salju' },
   kipas: { label: 'Kipas angin', ikon: 'kipas' },
   kasur: { label: 'Kasur 90×200', ikon: 'kasur' },
-  lemari: { label: 'Lemari 2 pintu', ikon: 'lemari' },
+  kasur120: { label: 'Kasur 120×200 berlaci', ikon: 'kasur' },
+  lemari: { label: 'Lemari pakaian', ikon: 'lemari' },
   meja: { label: 'Meja & kursi', ikon: 'meja' },
   wifi: { label: 'Wifi', ikon: 'wifi' },
   kmDalam: { label: 'Kamar mandi dalam', ikon: 'air' },
@@ -94,6 +95,23 @@ export const FOTO_KAMAR = {
   '12': require('../../assets/foto/kamar-12.webp'),
   '05': require('../../assets/foto/kamar-05.webp'),
 };
+// Galeri iklan per kamar kosong: kamar, kamar mandi, dan selasar lantainya (satu bangunan).
+const F_KM_DALAM = { src: require('../../assets/foto/km-dalam.webp'), alt: 'Kamar mandi dalam berdinding keramik dengan kloset jongkok' };
+const F_KM_LUAR = { src: require('../../assets/foto/km-luar.webp'), alt: 'Kamar mandi luar dengan kloset jongkok, ember merah, dan keran' };
+const F_SELASAR_1 = { src: require('../../assets/foto/selasar-1.webp'), alt: 'Selasar lantai 1 berlantai tegel kotak-kotak dengan deretan jendela' };
+const F_SELASAR_2 = { src: require('../../assets/foto/selasar-2.webp'), alt: 'Selasar lantai 2 beratap dengan pagar balkon dan deretan pintu kamar' };
+const F = {
+  '03': { src: FOTO_KAMAR['03'], alt: 'Kamar dengan ranjang 120 cm berlaci, sprei biru, dinding hijau muda, dan tirai jendela' },
+  '10': { src: FOTO_KAMAR['10'], alt: 'Kamar sederhana dengan ranjang tunggal dan lemari pakaian' },
+  '12': { src: FOTO_KAMAR['12'], alt: 'Kamar mungil dengan ranjang tunggal bersprei merah muda, lantai tegel kotak-kotak, dan jendela kaca hijau' },
+};
+export const GALERI = {
+  '03': [F['03'], F_KM_DALAM, F_SELASAR_1],
+  '10': [F['10'], F_KM_LUAR, F_SELASAR_2],
+  '12': [F['12'], F_KM_DALAM, F_SELASAR_2],
+  // Kamar 05 belum punya foto sendiri setelah perawatan: pakai kamar sejenis (tipe Tegel).
+  '05': [{ ...F['12'], sejenis: true }, F_KM_DALAM, F_SELASAR_1],
+};
 export const FOTO_KERAN = require('../../assets/foto/laporan-keran.webp');
 
 export const PENGELOLA = [
@@ -111,9 +129,60 @@ export const KATEGORI = [
 ];
 export const LOKASI = ['Kamar', 'Kamar mandi', 'Dapur bersama', 'Lorong', 'Jemuran', 'Parkiran'];
 export const URGENSI = [
-  { id: 'tunda', label: 'Bisa ditunda' },
-  { id: 'mengganggu', label: 'Cukup mengganggu' },
-  { id: 'darurat', label: 'Darurat' },
+  { id: 'darurat', label: 'Darurat', waktu: 'didatangi hari ini' },
+  { id: 'mengganggu', label: 'Cukup mengganggu', waktu: 'ditangani 1–2 hari' },
+  { id: 'tunda', label: 'Bisa ditunda', waktu: 'dijadwalkan pekan ini' },
+];
+
+// Pilihan cepat "apa yang rusak" per jenis, supaya laporan bisa dikirim tanpa mengetik.
+export const RUSAK_CEPAT = {
+  listrik: { lokasi: 'Kamar', pilihan: ['Lampu mati', 'Stopkontak tidak berfungsi', 'Sekring/MCB turun', 'Saklar rusak'] },
+  air: { lokasi: 'Kamar mandi', pilihan: ['Keran bocor', 'Kloset mampet', 'Shower mati', 'Air kecil'] },
+  perabot: { lokasi: 'Kamar', pilihan: ['Engsel lemari longgar', 'Ranjang goyah', 'Kursi patah', 'Gorden lepas'] },
+  pintu: { lokasi: 'Kamar', pilihan: ['Kunci macet', 'Grendel lepas', 'Pintu seret', 'Kunci hilang'] },
+  internet: { lokasi: 'Lorong', pilihan: ['Wifi putus-putus', 'Wifi tidak muncul', 'Lambat malam hari'] },
+  lain: { lokasi: 'Kamar', pilihan: ['Atap bocor', 'Ada tikus/serangga', 'Bau saluran air'] },
+};
+
+// Perkiraan biaya bahan per jenis perbaikan (masuk pengeluaran saat tiket ditandai selesai).
+export const BIAYA_PERBAIKAN = { listrik: 25000, air: 30000, perabot: 35000, pintu: 45000, internet: 0, lain: 20000 };
+
+// Pengeluaran rutin bulanan kos (rekaan, wajar untuk 12 kamar di Tulungagung). tanggal = hari dibayar tiap bulan.
+export const BIAYA_TETAP = [
+  { id: 'honor', label: 'Honor Pak Darmo (penjaga)', nominal: 1200000, tanggal: 1, ikon: 'orang' },
+  { id: 'sampah', label: 'Iuran sampah & keamanan RT', nominal: 75000, tanggal: 5, ikon: 'sapu' },
+  { id: 'wifi', label: 'Langganan wifi 50 Mbps', nominal: 385000, tanggal: 10, ikon: 'wifi' },
+  { id: 'dapur', label: 'Gas & sabun dapur bersama', nominal: 95000, tanggal: 15, ikon: 'air' },
+  { id: 'listrik', label: 'Listrik area bersama & pompa air', nominal: null, tanggal: 20, ikon: 'petir' },
+];
+/** Tagihan listrik area bersama berubah tiap bulan (kunci bulan → nominal). */
+export const listrikBulan = (kb) => 405000 + ((kb * 37) % 9) * 7000;
+
+// Pengeluaran sekali waktu (hariLalu dari hari ini).
+export const BIAYA_SEKALI = [{ id: 'cat05', label: 'Cat ulang Kamar 05 (cat dan upah tukang)', nominal: 680000, hariLalu: 4, ikon: 'sapu' }];
+
+// Berita acara serah kunci Kamar 07 (kondisi saat masuk), dipakai saat cek kamar ketika keluar.
+export const INVENTARIS_07 = [
+  { barang: 'Kasur 90×200 dan bantal', kondisi: 'Baik' },
+  { barang: 'Lemari 2 pintu', kondisi: 'Engsel kanan longgar (sudah tercatat, tidak dipotong)' },
+  { barang: 'Meja dan kursi belajar', kondisi: 'Baik' },
+  { barang: 'Kipas angin dinding', kondisi: 'Baik' },
+  { barang: 'Kamar mandi: kloset jongkok, bak, shower', kondisi: 'Baik, tidak bocor' },
+  { barang: 'Lampu kamar & kamar mandi', kondisi: 'Menyala' },
+  { barang: 'Dinding & cat', kondisi: 'Noda kecil dekat jendela' },
+  { barang: 'Kunci', kondisi: '2 kunci kamar + 1 kunci gembok gerbang' },
+];
+export const POTONGAN = [
+  { label: 'Kunci hilang', nominal: 35000, satuan: 'per kunci' },
+  { label: 'Kerusakan baru di luar berita acara', nominal: null, satuan: 'sesuai harga perbaikan' },
+];
+
+// Sekitar kos (rekaan, jarak perkiraan) untuk halaman calon penghuni.
+export const SEKITAR = [
+  { label: 'Kampus', jarak: '±1,2 km', ikon: 'papan' },
+  { label: 'Pasar pagi', jarak: '±800 m', ikon: 'dompet' },
+  { label: 'Masjid', jarak: '150 m', ikon: 'rumah' },
+  { label: 'Warung makan', jarak: '2 menit jalan', ikon: 'titik' },
 ];
 
 export const STATUS_TIKET = [

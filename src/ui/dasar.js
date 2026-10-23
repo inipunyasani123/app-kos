@@ -8,7 +8,7 @@ const VARIAN = StyleSheet.create({
   teks: { ...F.teks, fontSize: 15, lineHeight: 22, color: W.tinta },
   kecil: { ...F.teks, fontSize: 13, lineHeight: 19, color: W.abu },
   mini: { ...F.sedang, fontSize: 12, lineHeight: 16, color: W.abu },
-  label: { ...F.pekat, fontSize: 11, lineHeight: 14, letterSpacing: 1.4, color: W.abu, textTransform: 'uppercase' },
+  label: { ...F.pekat, fontSize: 12, lineHeight: 16, letterSpacing: 1.2, color: W.abu, textTransform: 'uppercase' },
   h1: { ...F.judul, fontSize: 28, lineHeight: 34, color: W.tinta },
   h2: { ...F.judul, fontSize: 20, lineHeight: 26, color: W.tinta },
   h3: { ...F.tebal, fontSize: 16, lineHeight: 22, color: W.tinta },
@@ -52,7 +52,8 @@ const JENIS = {
   garisTerang: { bg: 'transparent', fg: W.kapur, garis: '#8C8173' },
   bahaya: { bg: 'transparent', fg: W.bataTua, garis: W.bata },
 };
-const UKURAN = { besar: { h: 52, f: 16, px: 20 }, sedang: { h: 44, f: 15, px: 16 }, kecil: { h: 36, f: 13.5, px: 12 } };
+// Semua ukuran >= 44 px (target sentuh).
+const UKURAN = { besar: { h: 52, f: 16, px: 20 }, sedang: { h: 48, f: 15, px: 16 }, kecil: { h: 44, f: 14, px: 14 } };
 
 /** Tombol. Dengan `href` menjadi tautan (<a> di web). */
 export function Tombol({ label, onPress, href, jenis = 'utama', ukuran = 'sedang', ikon, ikonKanan, disabled, aksesLabel, penuh, style, replace }) {
@@ -132,8 +133,8 @@ export function Chip({ label, aktif, onPress, ikon, peran = 'radio', kecil }) {
       aria-checked={aktif}
       onPress={onPress}
       style={({ pressed }) => ({
-        minHeight: kecil ? 32 : 38,
-        paddingHorizontal: kecil ? 11 : 14,
+        minHeight: 44,
+        paddingHorizontal: kecil ? 12 : 15,
         borderRadius: 999,
         borderWidth: 1.5,
         borderColor: aktif ? W.tinta : W.garisTua,
@@ -145,7 +146,7 @@ export function Chip({ label, aktif, onPress, ikon, peran = 'radio', kecil }) {
       })}
     >
       {ikon ? <Ikon nama={ikon} ukuran={16} warna={aktif ? W.kapur : W.tinta} /> : null}
-      <Text style={[F.sedang, { fontSize: kecil ? 13 : 14, color: aktif ? W.kapur : W.tinta }]}>{label}</Text>
+      <Text style={[F.sedang, { fontSize: kecil ? 14 : 15, color: aktif ? W.kapur : W.tinta }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -171,7 +172,7 @@ export function Lencana({ teks, warna = 'abu', ikon }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start', backgroundColor: bg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
       {ikon ? <Ikon nama={ikon} ukuran={13} warna={fg} tebal={2.2} /> : null}
-      <Text style={[F.tebal, { fontSize: 12, lineHeight: 16, color: fg }]}>{teks}</Text>
+      <Text style={[F.tebal, { fontSize: 12.5, lineHeight: 17, color: fg }]}>{teks}</Text>
     </View>
   );
 }
@@ -219,5 +220,28 @@ export function Layar({ children, judul, sub, kembali, kembaliLabel = 'Kembali',
 }
 
 export { Foto } from './Foto';
+
+/** Sakelar nyala/mati (role switch), seluruh baris bisa ditekan, tinggi >= 44 px. */
+export function Saklar({ nyala, onUbah, label, keterangan }) {
+  return (
+    <Pressable
+      role="switch"
+      aria-checked={nyala}
+      aria-label={label}
+      onPress={() => onUbah(!nyala)}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 48, opacity: pressed ? 0.85 : 1 })}
+    >
+      <View style={{ flex: 1, gap: 2 }}>
+        <T v="kuat">{label}</T>
+        {keterangan ? <T v="mini">{keterangan}</T> : null}
+      </View>
+      <View style={{ width: 52, height: 32, borderRadius: 16, padding: 3, backgroundColor: nyala ? W.hijau : '#857A6D', justifyContent: 'center' }}>
+        <View style={{ width: 26, height: 26, borderRadius: 13, backgroundColor: W.putih, alignSelf: nyala ? 'flex-end' : 'flex-start', alignItems: 'center', justifyContent: 'center' }}>
+          {nyala ? <Ikon nama="centang" ukuran={14} warna={W.hijau} tebal={2.6} /> : null}
+        </View>
+      </View>
+    </Pressable>
+  );
+}
 
 export const web = Platform.OS === 'web';

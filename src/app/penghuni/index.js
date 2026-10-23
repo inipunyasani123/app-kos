@@ -4,12 +4,12 @@ import { meta } from '../../lib/meta';
 import { KOS, TIPE, PENGELOLA } from '../../lib/data';
 import { useToko } from '../../lib/toko';
 import { rupiah } from '../../lib/uang';
-import { tgl, hariTgl, jarakHari, namaBulan, hariKe, jam, relatif } from '../../lib/waktu';
+import { tgl, tglPendek, hariTgl, jarakHari, namaBulan, hariKe, jam, relatif } from '../../lib/waktu';
 import { KAMAR_BY } from '../../lib/hitung';
 import { Layar, T, Sub, Tombol, Ketuk, Kerangka, Lencana } from '../../ui/dasar';
 import { Tegel, Gantungan, Stempel, Sosok } from '../../ui/motif';
 import { Ikon } from '../../ui/Ikon';
-import { lencanaTagihan, METODE, lencanaTiket } from '../../ui/kos';
+import { lencanaTagihan, METODE, LangkahTiket } from '../../ui/kos';
 
 export function generateMetadata() {
   return meta({
@@ -51,9 +51,9 @@ function KartuTagihan({ p, hari }) {
     <View style={{ backgroundColor: W.tinta, borderRadius: 26, overflow: 'hidden' }}>
       <Tegel tinggi={14} ubin={28} warna="gelap" />
       <View style={{ padding: 18, gap: 8 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-          <Text style={[F.pekat, { fontSize: 11, letterSpacing: 1.4, color: '#D9CDBB' }]}>TAGIHAN {namaBulan(t.jatuh).toUpperCase()}</Text>
-          <Lencana {...l} />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, minHeight: 24 }}>
+          <Text style={[F.pekat, { fontSize: 12, letterSpacing: 1.2, color: '#D9CDBB' }]}>SEWA {tglPendek(t.jatuh).toUpperCase()} – {tglPendek(t.akhir).toUpperCase()}</Text>
+          {t.status !== 'segera' ? <Lencana {...l} /> : null}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={[F.judul, ANGKA, { fontSize: 40, lineHeight: 48, color: W.kunyit }]}>{rupiah(t.total)}</Text>
@@ -62,7 +62,7 @@ function KartuTagihan({ p, hari }) {
         <Text style={[F.teks, { fontSize: 14, lineHeight: 20, color: '#EDE4D6' }]}>
           {lunas
             ? `Dibayar ${tgl(hariKe(t.bayar.ts))} lewat ${METODE[t.bayar.metode]}. Tagihan berikutnya terbit ${tgl(p.berikut.jatuh - 7)}.`
-            : `Jatuh tempo ${hariTgl(t.jatuh)} (${jarakHari(t.jatuh, hari)}).`}
+            : `Tagihan ${namaBulan(t.jatuh, false)} · bayar paling lambat ${hariTgl(t.jatuh)} (${jarakHari(t.jatuh, hari)}).`}
         </Text>
         {!lunas && t.denda ? (
           <Text style={[F.sedang, { fontSize: 13, color: '#F6C9BC' }]}>Termasuk denda telat {rupiah(t.denda)}.</Text>
@@ -148,20 +148,31 @@ function Isi({ data }) {
       </View>
 
       <View style={{ flexDirection: 'row', gap: 12 }}>
-        <Ketuk href="/penghuni/lapor" style={ubin}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <T v="label">Perbaikan</T>
-            <Ikon nama="obeng" ukuran={20} warna={W.bata} />
-          </View>
-          <Text style={[F.judul, ANGKA, { fontSize: 34, lineHeight: 40, color: W.tinta }]}>{aktif.length}</Text>
-          <T v="kecil">{aktif.length ? 'laporan sedang diproses' : 'tidak ada laporan aktif'}</T>
-          {terakhir ? (
-            <View style={{ marginTop: 'auto', gap: 4 }}>
-              <Lencana {...lencanaTiket(terakhir.status)} />
-              <T v="mini" numberOfLines={1}>{terakhir.judul}</T>
+        {aktif.length ? (
+          <Ketuk href="/penghuni/lapor" style={ubin}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              <T v="label">Perbaikan</T>
+              <Ikon nama="obeng" ukuran={20} warna={W.bata} />
             </View>
-          ) : null}
-        </Ketuk>
+            <T v="kuat" numberOfLines={3}>{aktif[0].judul}</T>
+            <T v="mini">{aktif.length > 1 ? `+${aktif.length - 1} laporan lain · ` : ''}{relatif(aktif[0].diubah, data.kini)}</T>
+            <View style={{ marginTop: 'auto', gap: 6 }}>
+              <LangkahTiket tiket={aktif[0]} kini={data.kini} ringkas />
+            </View>
+          </Ketuk>
+        ) : (
+          <Ketuk href="/penghuni/lapor" style={[ubin, { backgroundColor: W.hijauMuda, borderColor: W.hijauMuda }]}>
+            <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: W.hijau, alignItems: 'center', justifyContent: 'center' }}>
+              <Ikon nama="centang" ukuran={24} warna={W.putih} tebal={2.6} />
+            </View>
+            <Text style={[F.judul, { fontSize: 22, lineHeight: 28, color: W.hijau }]}>Semua beres</Text>
+            <T v="mini" warna={W.hijau}>Tidak ada kerusakan yang sedang dilaporkan{terakhir ? `; terakhir: ${terakhir.judul.toLowerCase()} (selesai)` : ''}.</T>
+            <View style={{ marginTop: 'auto', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <T v="kuat" warna={W.hijau}>Ada yang rusak? Lapor</T>
+              <Ikon nama="kanan" ukuran={16} warna={W.hijau} tebal={2.2} />
+            </View>
+          </Ketuk>
+        )}
         <Ketuk href="/penghuni/info" style={[ubin, { backgroundColor: W.kunyitMuda, borderColor: W.kunyitMuda }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
             <T v="label" warna={W.coklat}>Pengumuman</T>

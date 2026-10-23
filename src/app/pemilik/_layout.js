@@ -12,7 +12,7 @@ export default function LayoutPemilik() {
   const baru = data ? data.tiket.filter((t) => t.status === 'baru').length : 0;
   return (
     <View style={{ flex: 1 }}>
-      <BilahAtas nama={`${WENING.nama} · Pemilik`} peran={`${KOS.nama} · 12 kamar`} av={WENING.av} />
+      <BilahAtas nama={`${WENING.nama} · Pemilik`} peran={`12 kamar · ${KOS.wilayah.split(',')[0]}`} av={WENING.av} keMode="penghuni" />
       <View role="main" style={{ flex: 1 }}>
         <Slot />
       </View>

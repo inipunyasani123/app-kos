@@ -7,10 +7,11 @@ import { useToko } from '../../lib/toko';
 import { rupiah } from '../../lib/uang';
 import { tgl, tglPendek, hariTgl, jarakHari, namaBulan, hariKe } from '../../lib/waktu';
 import { KAMAR_BY, denda } from '../../lib/hitung';
-import { Layar, T, Sub, Tombol, Kartu, Kerangka, Lencana, BarisInfo, Garis } from '../../ui/dasar';
+import { Layar, T, Sub, Tombol, Kartu, Kerangka, Lencana, BarisInfo, Garis, Saklar } from '../../ui/dasar';
+import { useKabar } from '../../ui/lapisan';
 import { Ikon } from '../../ui/Ikon';
 import { Gerigi } from '../../ui/motif';
-import { lencanaTagihan, AturanDenda, METODE } from '../../ui/kos';
+import { lencanaTagihan, AturanDenda, METODE, GarisWaktuTagihan } from '../../ui/kos';
 
 export function generateMetadata() {
   return meta({
@@ -23,7 +24,7 @@ export function generateMetadata() {
 export default function Tagihan() {
   const { data } = useToko();
   return (
-    <Layar judul="Tagihan" sub={data ? `Periode ${tglPendek(data.demo.tagihan.jatuh)} – ${tgl(data.demo.tagihan.akhir)}` : 'Periode sewa berjalan'}>
+    <Layar judul="Tagihan" sub={data ? `Sewa ${tglPendek(data.demo.tagihan.jatuh)} – ${tgl(data.demo.tagihan.akhir)} · tagihan bulan ${namaBulan(data.demo.tagihan.jatuh, false)}` : 'Periode sewa berjalan'}>
       {data ? (
         <Isi data={data} />
       ) : (
@@ -79,6 +80,9 @@ function Simulasi({ sewaParkir }) {
 }
 
 function Isi({ data }) {
+  const { setPengingat } = useToko();
+  const kabar = useKabar();
+  const pengingat = data.pengingat;
   const p = data.demo;
   const t = p.tagihan;
   const hari = data.hari;
@@ -91,9 +95,9 @@ function Isi({ data }) {
       <View>
         <Gerigi />
         <View style={{ backgroundColor: W.kertas, padding: 16, gap: 6 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <T v="label">Tagihan {namaBulan(t.jatuh)}</T>
-            <Lencana {...l} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', minHeight: 24 }}>
+            <T v="label">Sewa {tglPendek(t.jatuh)} – {tglPendek(t.akhir)}</T>
+            {t.status !== 'segera' ? <Lencana {...l} /> : null}
           </View>
           <BarisInfo label={`Sewa Kamar ${k.id} · Tipe ${TIPE[k.tipe].nama}`} nilai={rupiah(t.sewa)} />
           <BarisInfo label="Parkir motor" nilai={rupiah(t.parkir)} />
@@ -112,8 +116,11 @@ function Isi({ data }) {
             <T v="kecil" style={{ flex: 1 }}>
               {lunas
                 ? `Lunas ${tgl(hariKe(t.bayar.ts))} lewat ${METODE[t.bayar.metode]}.`
-                : `Jatuh tempo ${hariTgl(t.jatuh)}, ${jarakHari(t.jatuh, hari)}. Denda mulai ${tgl(t.jatuh + DENDA.tenggang + 1)}.`}
+                : `Bayar paling lambat ${hariTgl(t.jatuh)} (${jarakHari(t.jatuh, hari)}). Denda mulai ${hariTgl(t.jatuh + DENDA.tenggang + 1)}.`}
             </T>
+          </View>
+          <View style={{ marginTop: 8 }}>
+            <GarisWaktuTagihan t={t} hari={hari} diingatkan={pengingat || !!p.ingat} />
           </View>
           <View style={{ marginTop: 10 }}>
             {lunas ? (
@@ -125,6 +132,20 @@ function Isi({ data }) {
         </View>
         <Gerigi bawah />
       </View>
+
+      {!lunas ? (
+        <Kartu style={{ gap: 4, paddingVertical: 8 }}>
+          <Saklar
+            nyala={pengingat}
+            onUbah={(v) => {
+              setPengingat(v);
+              kabar(v ? `Pengingat dipasang untuk ${hariTgl(t.jatuh - 3)}, 08.00 WIB (simulasi).` : 'Pengingat dimatikan.');
+            }}
+            label="Ingatkan aku 3 hari sebelum jatuh tempo"
+            keterangan={pengingat ? `Notifikasi simulasi ${hariTgl(t.jatuh - 3)} pukul 08.00 WIB.` : 'Notifikasi simulasi di perangkat ini.'}
+          />
+        </Kartu>
+      ) : null}
 
       <Kartu style={{ gap: 10 }}>
         <Sub level={2} v="h3">Aturan denda</Sub>

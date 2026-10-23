@@ -57,7 +57,7 @@ export default function Sambutan() {
           <Logo ukuran={38} />
           <Text style={[F.judul, { fontSize: 24, color: W.tinta, flex: 1 }]}>Grendel</Text>
           <View style={{ borderWidth: 1.5, borderColor: W.tinta, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
-            <Text style={[F.pekat, { fontSize: 11, letterSpacing: 1.2, color: W.tinta }]}>DEMO</Text>
+            <Text style={[F.pekat, { fontSize: 12, letterSpacing: 1.2, color: W.tinta }]}>DEMO</Text>
           </View>
         </View>
 

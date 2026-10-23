@@ -7,7 +7,8 @@ import { Ikon, Logo } from './Ikon';
 import { Tegel, Sosok } from './motif';
 
 /** Bilah atas: identitas pengguna + tombol ganti mode, diakhiri jalur tegel tipis. */
-export function BilahAtas({ nama, peran, av }) {
+export function BilahAtas({ nama, peran, av, keMode }) {
+  // keMode: 'pemilik' | 'penghuni' (tujuan tombol ganti mode)
   const insets = useSafeAreaInsets();
   return (
     <View role="banner" style={{ backgroundColor: W.kapur, paddingTop: insets.top }}>
@@ -22,12 +23,12 @@ export function BilahAtas({ nama, peran, av }) {
           </Text>
         </View>
         <Tautan
-          href="/"
-          aria-label="Ganti mode: kembali ke pilihan penghuni atau pemilik"
+          href={`/${keMode}`}
+          aria-label={`Ganti ke mode ${keMode}`}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1.5, borderColor: W.garisTua, opacity: pressed ? 0.8 : 1 })}
         >
           <Ikon nama="tukar" ukuran={16} />
-          <Text style={[F.tebal, { fontSize: 13, color: W.tinta }]}>Ganti mode</Text>
+          <Text style={[F.tebal, { fontSize: 13.5, color: W.tinta }]}>Mode {keMode}</Text>
         </Tautan>
       </View>
       <Tegel tinggi={10} ubin={20} />
@@ -62,12 +63,12 @@ export function BilahTab({ label, item }) {
               <View style={{ width: 46, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: aktif ? W.kunyit : 'transparent' }}>
                 <Ikon nama={it.ikon} ukuran={20} warna={aktif ? W.tinta : W.kapur} tebal={aktif ? 2.1 : 1.8} />
               </View>
-              <Text style={[aktif ? F.pekat : F.sedang, { fontSize: 11, lineHeight: 14, color: aktif ? W.kunyit : '#E8DFD1' }]} numberOfLines={1}>
+              <Text style={[aktif ? F.pekat : F.sedang, { fontSize: 12.5, lineHeight: 16, color: aktif ? W.kunyit : '#E8DFD1' }]} numberOfLines={1}>
                 {it.label}
               </Text>
               {it.jumlah ? (
-                <View aria-hidden style={{ position: 'absolute', top: 2, right: '22%', minWidth: 18, height: 18, borderRadius: 9, backgroundColor: W.bata, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: W.tinta }}>
-                  <Text style={[F.pekat, { fontSize: 10, color: W.putih }]}>{it.jumlah}</Text>
+                <View aria-hidden style={{ position: 'absolute', top: 0, right: '18%', minWidth: 20, height: 20, borderRadius: 10, backgroundColor: W.bata, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 1.5, borderColor: W.tinta }}>
+                  <Text style={[F.pekat, { fontSize: 12, color: W.putih }]}>{it.jumlah}</Text>
                 </View>
               ) : null}
           </Tautan>

@@ -9,7 +9,7 @@ import { tgl, jarakHari, jam } from '../../lib/waktu';
 import { Layar, T, Sub, Tombol, Kerangka, Lencana, Chip, GrupChip, BarisInfo, Foto } from '../../ui/dasar';
 import { Pelat, Tegel, Sosok } from '../../ui/motif';
 import { Ikon } from '../../ui/Ikon';
-import { lencanaTagihan } from '../../ui/kos';
+import { RincianPenghuni } from '../../ui/bayar';
 import { useLembar, useKabar } from '../../ui/lapisan';
 
 export function generateMetadata() {
@@ -63,50 +63,14 @@ function DetailKamar({ id }) {
         </View>
       </View>
 
-      {p ? (
-        <View style={{ backgroundColor: W.kertas, borderRadius: 18, borderWidth: 1, borderColor: W.garis, padding: 14, gap: 8 }}>
-          <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-            <Sosok av={p.av} ukuran={48} />
-            <View style={{ flex: 1 }}>
-              <T v="kuat">{p.nama}</T>
-              <T v="mini">{p.kerja} · tinggal sejak {tgl(p.masuk)}</T>
-            </View>
-          </View>
-          <BarisInfo label="Periode berjalan" nilai={`jatuh tempo ${tgl(p.tagihan.jatuh)}`} />
-          <BarisInfo label="Tagihan" nilai={rupiah(p.tagihan.total)} kuat />
-          <Lencana {...lencanaTagihan(p.tagihan, data.hari)} />
-          {p.tagihan.status !== 'lunas' ? (
-            <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap', marginTop: 4 }}>
-              <Tombol
-                ukuran="kecil"
-                ikon="lonceng"
-                label={p.ingat ? `Diingatkan ${jam(p.ingat)}` : 'Kirim pengingat'}
-                jenis={p.ingat ? 'garis' : 'utama'}
-                onPress={() => {
-                  ingatkan([p.kamar]);
-                  kabar(`Pengingat terkirim ke ${p.panggil}.`);
-                }}
-              />
-              <Tombol
-                ukuran="kecil"
-                jenis="garis"
-                ikon="dompet"
-                label="Catat bayar tunai"
-                onPress={() => {
-                  bayar(p.kamar, p.tagihan.j, 'tunai', p.tagihan.sewa + p.tagihan.parkir, p.tagihan.jatuh);
-                  kabar(`Pembayaran tunai ${p.panggil} dicatat.`);
-                }}
-              />
-            </View>
-          ) : null}
-        </View>
-      ) : null}
+      {p ? <RincianPenghuni kamar={k.id} /> : null}
 
       {k.status === 'kosong' ? (
         <View style={{ backgroundColor: W.kertas, borderRadius: 18, borderWidth: 1, borderColor: W.garis, padding: 14, gap: 10 }}>
           <T v="kecil">Kosong sejak {k.kosongSejak != null ? `${tgl(k.kosongSejak)} (${jarakHari(k.kosongSejak, data.hari)})` : 'hari ini'}.</T>
           <Lencana teks={k.iklan ? 'Tayang di iklan' : 'Belum diiklankan'} warna={k.iklan ? 'hijau' : 'abu'} />
           <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+            <Tombol ukuran="kecil" jenis="gelap" ikon="mata" label="Halaman calon penghuni" href={`/kamar/${k.id}`} />
             <Tombol ukuran="kecil" ikon="papan" label={k.iklan ? 'Tarik iklan' : 'Tayangkan iklan'} jenis={k.iklan ? 'garis' : 'hijau'} onPress={() => { iklan(k.id, !k.iklan); kabar(k.iklan ? 'Iklan ditarik.' : 'Iklan kamar tayang.'); }} />
             <Tombol ukuran="kecil" jenis="garis" ikon="sapu" label="Tandai perawatan" onPress={() => { statusKamar(k.id, 'perawatan'); kabar(`Kamar ${k.id} ditandai perawatan.`); }} />
           </View>
@@ -142,8 +106,9 @@ function DetailKamar({ id }) {
 function Petak({ k, redup, buka }) {
   // Kamar di luar saringan dibuat pudar tanpa opacity, supaya teksnya tetap lolos kontras.
   const g = redup ? { ...GAYA_STATUS[k.status], latar: '#D9CEBF', teks: W.tinta } : GAYA_STATUS[k.status];
-  const sub = k.status === 'terisi' ? k.penghuni.panggil : k.status === 'kosong' ? 'Tersedia' : 'Dicat';
+  const sub = k.status === 'terisi' ? k.penghuni.panggil : k.status === 'kosong' ? 'Tersedia' : 'Perawatan';
   const telat = k.penghuni && k.penghuni.tagihan.status === 'telat';
+  const ket = telat ? `Telat ${k.penghuni.tagihan.telat} hari` : k.tipeData.nama;
   return (
     <Pressable
       role="button"
@@ -166,7 +131,7 @@ function Petak({ k, redup, buka }) {
     >
       <Pelat nomor={k.id} latar={g.latar} teks={g.teks} ukuran={46} />
       <Text style={[F.tebal, { fontSize: 12.5, color: W.tinta }]} numberOfLines={1}>{sub}</Text>
-      <Text style={[F.teks, { fontSize: 10.5, color: W.abu }]} numberOfLines={1}>{k.tipeData.nama}</Text>
+      <Text style={[telat ? F.tebal : F.teks, { fontSize: 12, color: telat ? W.bataTua : W.abu }]} numberOfLines={1}>{ket}</Text>
       {telat ? (
         <View style={{ position: 'absolute', top: 6, right: 6, width: 18, height: 18, borderRadius: 9, backgroundColor: W.bata, alignItems: 'center', justifyContent: 'center' }}>
           <Ikon nama="awas" ukuran={12} warna={W.putih} tebal={2.4} />
@@ -194,7 +159,7 @@ function Lantai({ no, kamar, saring, buka }) {
           <Tegel tinggi={22} ubin={22} warna="lembut" />
           <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6 }}>
             <View style={{ backgroundColor: W.kapur, paddingHorizontal: 8, borderRadius: 6 }}>
-              <Text style={[F.pekat, { fontSize: 10, letterSpacing: 2, color: W.abu }]}>SELASAR</Text>
+              <Text style={[F.pekat, { fontSize: 12, letterSpacing: 2, color: W.abu }]}>SELASAR</Text>
             </View>
           </View>
         </View>

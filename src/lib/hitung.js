@@ -2,7 +2,7 @@
 // "hari ini" WIB + catatan aksi pengguna yang tersimpan di perangkat. Data contoh tidak pernah basi.
 import {
   PENGHUNI, MANTAN, KAMAR, TIPE, PARKIR, DENDA, TERBIT_HARI, PERAWATAN, IKLAN_AWAL, TIKET,
-  KONTRAK_BULAN, CALON_AWAL, pengumuman,
+  KONTRAK_BULAN, CALON_AWAL, DEPOSIT, BIAYA_TETAP, BIAYA_SEKALI, BIAYA_PERBAIKAN, listrikBulan, pengumuman,
 } from './data';
 import { hariKe, tambahBulan, kunciBulan, cap, pecah, hariBerikut } from './waktu';
 
@@ -74,8 +74,28 @@ export function bangun(kini, aksi) {
     const aktif = belum[0] || lunas[lunas.length - 1];
     const st = statusTagihan(aktif, hari);
     const berikut = periode.find((x) => x.jatuh > aktif.jatuh) || null;
-    return { ...p, masuk, fokus, periode, sewa, parkir, tagihan: { ...aktif, ...st }, berikut, ingat: aksi.ingat?.[p.kamar] || null };
+    // Kontrak 12 bulanan bergulir; ketepatan bayar 12 periode terakhir (sampai periode aktif).
+    const blok = Math.max(1, Math.ceil((aktif.j + 1) / KONTRAK_BULAN));
+    const kontrak = { mulai: masuk, berakhir: tambahBulan(fokus, blok * KONTRAK_BULAN - p.bulanKe) - 1, deposit: DEPOSIT };
+    const ketepatan = [];
+    for (let j = aktif.j - 11; j <= aktif.j; j++) {
+      const x = periode[j];
+      if (!x) ketepatan.push({ j, jatuh: tambahBulan(fokus, j - p.bulanKe), nilai: 'belum' });
+      else if (!x.bayar) ketepatan.push({ j, jatuh: x.jatuh, nilai: statusTagihan(x, hari).status === 'telat' ? 'telat' : 'berjalan' });
+      else ketepatan.push({ j, jatuh: x.jatuh, nilai: x.bayar.telat > DENDA.tenggang ? 'telat' : x.bayar.telat > 0 ? 'tenggang' : 'tepat', telat: x.bayar.telat });
+    }
+    return { ...p, masuk, fokus, periode, sewa, parkir, tagihan: { ...aktif, ...st }, berikut, kontrak, ketepatan, ingat: aksi.ingat?.[p.kamar] || null };
   });
+
+  // Satu pengelompokan status bayar dipakai bersama oleh Ringkas dan tab Bayar (hitungan selalu sama).
+  const kelompok = { telat: [], tenggang: [], segera: [], lunas: [] };
+  for (const p of penghuni) {
+    const s = p.tagihan.status;
+    kelompok[s === 'hariIni' ? 'tenggang' : s].push(p);
+  }
+  for (const k of Object.keys(kelompok)) kelompok[k].sort((a, b) => a.tagihan.jatuh - b.tagihan.jatuh);
+  const terkumpul = kelompok.lunas.reduce((t, p) => t + p.tagihan.total, 0);
+  const ditunggu = [...kelompok.telat, ...kelompok.tenggang, ...kelompok.segera].reduce((t, p) => t + p.tagihan.total, 0);
   const penghuniBy = Object.fromEntries(penghuni.map((p) => [p.kamar, p]));
 
   // Kamar dan statusnya
@@ -111,8 +131,22 @@ export function bangun(kini, aksi) {
   });
 
   const bulanIni = kunciBulan(hari);
+
+  // Pengeluaran: biaya rutin per bulan (yang tanggalnya sudah lewat), biaya sekali, dan perbaikan dari tiket selesai.
+  const keluarSemua = [];
+  for (let i = 11; i >= 0; i--) {
+    const kb = bulanIni - i;
+    const y = Math.floor(kb / 12);
+    const m = kb % 12;
+    for (const b of BIAYA_TETAP) {
+      const n = Math.round(Date.UTC(y, m, b.tanggal) / 864e5);
+      if (n <= hari) keluarSemua.push({ id: `${b.id}-${kb}`, label: b.label, ikon: b.ikon, nominal: b.nominal ?? listrikBulan(kb), hari: n, jenis: 'rutin' });
+    }
+  }
+  for (const b of BIAYA_SEKALI) keluarSemua.push({ id: b.id, label: b.label, ikon: b.ikon, nominal: b.nominal, hari: hari - b.hariLalu, jenis: 'sekali' });
+
   const grafik = [];
-  for (let i = 5; i >= 0; i--) {
+  for (let i = 11; i >= 0; i--) {
     const kb = bulanIni - i;
     const y = Math.floor(kb / 12);
     const m = kb % 12;
@@ -153,6 +187,17 @@ export function bangun(kini, aksi) {
     })
     .sort((a, b) => b.diubah - a.diubah);
 
+  for (const t of tiket) {
+    if (t.status !== 'selesai') continue;
+    const biaya = t.biaya ?? BIAYA_PERBAIKAN[t.kategori] ?? 0;
+    if (biaya) keluarSemua.push({ id: `perbaikan-${t.id}`, label: `Perbaikan: ${t.judul.toLowerCase()} (Kamar ${t.kamar})`, ikon: 'obeng', nominal: biaya, hari: hariKe(t.diubah), jenis: 'perbaikan' });
+  }
+  for (const g of grafik) {
+    g.keluar = keluarSemua.filter((k) => kunciBulan(k.hari) === g.kb).reduce((t, k) => t + k.nominal, 0);
+    g.bersih = g.total - g.keluar;
+  }
+  const keluarBulanIni = keluarSemua.filter((k) => kunciBulan(k.hari) === bulanIni).sort((a, b) => b.hari - a.hari);
+
   // Kontrak penghuni demo (Kamar 07)
   const demo = penghuni.find((p) => p.demo);
   const perpanjang = aksi.kontrak || null;
@@ -174,6 +219,7 @@ export function bangun(kini, aksi) {
 
   return {
     kini, hari, penghuni, penghuniBy, demo, kamar, grafik, ditagih, diterima, tiket, kontrak, calon,
+    kelompok, terkumpul, ditunggu, keluarBulanIni, pengingat: !!aksi.pengingat, dibalas: aksi.dibalas || {},
     pengumuman: pengumuman(hari),
     chat: aksi.chat || [],
   };

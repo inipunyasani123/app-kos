@@ -23,16 +23,17 @@ export const W = {
 };
 
 const web = Platform.OS === 'web';
-const SANS = 'Jakarta, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
-const SERIF = '"Young Serif", Georgia, "Times New Roman", serif';
+// Judul: Patua One (slab ala papan nama kos dicat tangan). Teks: Karla (grotesk hangat, punya angka tabular).
+const SANS = 'Karla, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+const SERIF = '"Patua One", Rockwell, "Roboto Slab", Georgia, serif';
 
 // Di web satu berkas font variabel dipakai dengan fontWeight; di Android/iOS tiap ketebalan punya nama sendiri.
 export const F = {
-  teks: web ? { fontFamily: SANS, fontWeight: '400' } : { fontFamily: 'Jakarta400' },
-  sedang: web ? { fontFamily: SANS, fontWeight: '600' } : { fontFamily: 'Jakarta600' },
-  tebal: web ? { fontFamily: SANS, fontWeight: '700' } : { fontFamily: 'Jakarta700' },
-  pekat: web ? { fontFamily: SANS, fontWeight: '800' } : { fontFamily: 'Jakarta800' },
-  judul: web ? { fontFamily: SERIF, fontWeight: '400' } : { fontFamily: 'YoungSerif' },
+  teks: web ? { fontFamily: SANS, fontWeight: '400' } : { fontFamily: 'Karla400' },
+  sedang: web ? { fontFamily: SANS, fontWeight: '600' } : { fontFamily: 'Karla600' },
+  tebal: web ? { fontFamily: SANS, fontWeight: '700' } : { fontFamily: 'Karla700' },
+  pekat: web ? { fontFamily: SANS, fontWeight: '800' } : { fontFamily: 'Karla800' },
+  judul: web ? { fontFamily: SERIF, fontWeight: '400' } : { fontFamily: 'PatuaOne' },
 };
 
 export const ANGKA = { fontVariant: ['tabular-nums'] };

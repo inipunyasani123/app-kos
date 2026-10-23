@@ -64,9 +64,10 @@ export function Lapisan({ children }) {
         </View>
         {lembar ? (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, justifyContent: 'flex-end' }}>
+            {/* Latar redup: ketuk untuk menutup (dekoratif; papan ketik memakai tombol Tutup atau Esc). */}
             <Pressable
               onPress={tutup}
-              aria-label="Tutup"
+              aria-hidden
               style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(34,28,23,0.5)' }}
               tabIndex={-1}
             />
@@ -92,7 +93,7 @@ export function Lapisan({ children }) {
                   <Ikon nama="silang" ukuran={18} />
                 </Pressable>
               </View>
-              <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 8, gap: 14 }} keyboardShouldPersistTaps="handled">
+              <ScrollView tabIndex={0} contentContainerStyle={{ padding: 16, paddingTop: 8, gap: 14 }} keyboardShouldPersistTaps="handled">
                 {lembar.isi}
               </ScrollView>
             </View>

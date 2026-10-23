@@ -3,7 +3,7 @@ import { View, Text, TextInput, Image, Pressable, Platform } from 'react-native'
 import * as ImagePicker from 'expo-image-picker';
 import { W, F } from '../../lib/tema';
 import { meta } from '../../lib/meta';
-import { KATEGORI, LOKASI, URGENSI, KOS } from '../../lib/data';
+import { KATEGORI, LOKASI, URGENSI, KOS, RUSAK_CEPAT } from '../../lib/data';
 import { useToko } from '../../lib/toko';
 import { Layar, T, Sub, Tombol, Kartu, Kerangka, Chip, GrupChip } from '../../ui/dasar';
 import { Ikon } from '../../ui/Ikon';
@@ -74,6 +74,16 @@ function Formulir({ tutup }) {
   const [lokasi, setLokasi] = useState('Kamar mandi');
   const [urgensi, setUrgensi] = useState('mengganggu');
   const [judul, setJudul] = useState('');
+  const [cepat, setCepat] = useState([]);
+  const pilihJenis = (k) => {
+    setKategori(k);
+    setLokasi(RUSAK_CEPAT[k].lokasi);
+    setCepat([]);
+  };
+  const tandai = (x) => {
+    setCepat((c) => (c.includes(x) ? c.filter((y) => y !== x) : [...c, x]));
+    if (galat) setGalat('');
+  };
   const [catatan, setCatatan] = useState('');
   const [foto, setFoto] = useState(null);
   const [galat, setGalat] = useState('');
@@ -93,11 +103,12 @@ function Formulir({ tutup }) {
   };
 
   const kirim = () => {
-    if (judul.trim().length < 4) {
-      setGalat('Tulis singkat apa yang rusak, minimal 4 huruf.');
+    const isi = judul.trim() || cepat.join(', ');
+    if (isi.length < 4) {
+      setGalat('Pilih salah satu kerusakan di atas, atau tulis singkat minimal 4 huruf.');
       return;
     }
-    lapor({ kamar: '07', judul: judul.trim(), kategori, lokasi, urgensi, catatan: catatan.trim(), fotoUri: foto || undefined });
+    lapor({ kamar: '07', judul: isi.charAt(0).toUpperCase() + isi.slice(1), kategori, lokasi, urgensi, catatan: catatan.trim(), fotoUri: foto || undefined });
     kabar('Laporan terkirim ke pengelola.');
     tutup();
   };
@@ -113,9 +124,18 @@ function Formulir({ tutup }) {
         <T v="label">Jenis kerusakan</T>
         <GrupChip label="Jenis kerusakan">
           {KATEGORI.map((k) => (
-            <Chip key={k.id} label={k.label} ikon={k.ikon} aktif={kategori === k.id} onPress={() => setKategori(k.id)} kecil />
+            <Chip key={k.id} label={k.label} ikon={k.ikon} aktif={kategori === k.id} onPress={() => pilihJenis(k.id)} kecil />
           ))}
         </GrupChip>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <T v="label">Apa yang rusak (boleh lebih dari satu)</T>
+        <View role="group" aria-label="Apa yang rusak" style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {RUSAK_CEPAT[kategori].pilihan.map((x) => (
+            <Chip key={x} peran="checkbox" label={x} aktif={cepat.includes(x)} onPress={() => tandai(x)} kecil />
+          ))}
+        </View>
       </View>
 
       <View style={{ gap: 8 }}>
@@ -128,7 +148,7 @@ function Formulir({ tutup }) {
       </View>
 
       <View style={{ gap: 6 }}>
-        <Text nativeID="lbl-judul" style={[F.pekat, { fontSize: 11, letterSpacing: 1.4, color: W.abu }]}>APA YANG RUSAK?</Text>
+        <Text nativeID="lbl-judul" style={[F.pekat, { fontSize: 12, letterSpacing: 1.2, color: W.abu }]}>ATAU TULIS SENDIRI</Text>
         <TextInput
           value={judul}
           onChangeText={(v) => {
@@ -138,7 +158,7 @@ function Formulir({ tutup }) {
           placeholder="mis. Keran kamar mandi bocor"
           placeholderTextColor="#7A6F64"
           aria-labelledby="lbl-judul"
-          aria-label="Apa yang rusak"
+          aria-label="Tulis sendiri apa yang rusak"
           aria-invalid={galat ? true : undefined}
           maxLength={60}
           style={[gayaInput, galat ? { borderColor: W.bata } : null]}
@@ -151,7 +171,7 @@ function Formulir({ tutup }) {
       </View>
 
       <View style={{ gap: 6 }}>
-        <Text nativeID="lbl-catatan" style={[F.pekat, { fontSize: 11, letterSpacing: 1.4, color: W.abu }]}>CATATAN (BOLEH KOSONG)</Text>
+        <Text nativeID="lbl-catatan" style={[F.pekat, { fontSize: 12, letterSpacing: 1.2, color: W.abu }]}>CATATAN (BOLEH KOSONG)</Text>
         <TextInput
           value={catatan}
           onChangeText={setCatatan}
@@ -173,6 +193,12 @@ function Formulir({ tutup }) {
             <Chip key={u.id} label={u.label} aktif={urgensi === u.id} onPress={() => setUrgensi(u.id)} kecil />
           ))}
         </GrupChip>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <Ikon nama="jam" ukuran={16} warna={W.abu} />
+          <T v="mini" style={{ flex: 1 }}>
+            {URGENSI.find((u) => u.id === urgensi).label}: {URGENSI.find((u) => u.id === urgensi).waktu} (perkiraan pengelola).
+          </T>
+        </View>
       </View>
 
       <View style={{ gap: 8 }}>

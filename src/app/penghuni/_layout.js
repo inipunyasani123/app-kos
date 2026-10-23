@@ -12,7 +12,7 @@ export default function LayoutPenghuni() {
   const tagihan = data && data.demo.tagihan.status !== 'lunas' ? 1 : 0;
   return (
     <View style={{ flex: 1 }}>
-      <BilahAtas nama={`Halo, ${LARAS.panggil}`} peran={`Kamar ${LARAS.kamar} · ${KOS.nama}`} av={LARAS.av} />
+      <BilahAtas nama={`Halo, ${LARAS.panggil}`} peran={`Kamar ${LARAS.kamar} · ${KOS.nama.replace('Kos ', '')}`} av={LARAS.av} keMode="pemilik" />
       <View role="main" style={{ flex: 1 }}>
         <Slot />
       </View>
