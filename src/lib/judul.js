@@ -1,0 +1,21 @@
+/** Judul tab per rute (web), disalin dari <title> HTML statis hasil build. Perbarui bila judul metadata rute berubah. */
+export const JUDUL = {
+  "/": "Grendel: Aplikasi Kos untuk Penghuni dan Pemilik",
+  "/404": "Halaman tidak ditemukan · Grendel",
+  "/kamar/03": "Kamar 03 Tipe Jendela, Rp1.150.000/bln · Grendel",
+  "/kamar/05": "Kamar 05 Tipe Tegel, Rp850.000/bln · Grendel",
+  "/kamar/10": "Kamar 10 Tipe Teras, Rp650.000/bln · Grendel",
+  "/kamar/12": "Kamar 12 Tipe Tegel, Rp850.000/bln · Grendel",
+  "/pemilik": "Dasbor Pemilik Kos: Okupansi dan Arus Kas · Grendel",
+  "/pemilik/iklan": "Iklan Kamar Kos Kosong untuk Calon Penghuni · Grendel",
+  "/pemilik/kamar": "Denah Kamar Kos dan Statusnya · Grendel",
+  "/pemilik/tagihan": "Status Bayar Semua Penghuni Kos · Grendel",
+  "/pemilik/tiket": "Tiket Kerusakan Kos untuk Pemilik · Grendel",
+  "/penghuni": "Beranda Penghuni · Grendel Kos",
+  "/penghuni/bayar": "Bayar Sewa Kos lewat QRIS atau Transfer · Grendel",
+  "/penghuni/info": "Pengumuman dan Tata Tertib Kos · Grendel",
+  "/penghuni/lapor": "Lapor Kerusakan Kamar Kos dengan Foto · Grendel",
+  "/penghuni/riwayat": "Riwayat Bayar Kos dan Kuitansi · Grendel",
+  "/penghuni/sewa": "Kontrak Sewa Kos, Perpanjang, dan Kontak · Grendel",
+  "/penghuni/tagihan": "Tagihan Sewa Kos dan Aturan Denda · Grendel",
+};
