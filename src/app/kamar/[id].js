@@ -25,11 +25,14 @@ export function generateMetadata(_req, params) {
   const id = String(params?.id || '03');
   const k = KAMAR.find((x) => x.id === id) || KAMAR[2];
   const tp = TIPE[k.tipe];
-  return meta({
-    judul: `Kamar ${k.id} Tipe ${tp.nama}, ${rupiah(tp.harga)}/bln · Grendel`,
-    deskripsi: `Kamar kos ${tp.ukuran} di ${KOS.nama} (rekaan), lantai ${k.lantai} khusus ${k.lantai === 1 ? 'putra' : 'putri'}: ${tp.fasilitas.map((f) => FASILITAS[f].label.toLowerCase()).join(', ')}. Jadwalkan survei.`.slice(0, 155),
-    path: `/kamar/${k.id}`,
-  });
+  // Deskripsi dirakit utuh (tanpa dipotong di tengah kata): fasilitas dikurangi sampai <= 155 karakter.
+  const fas = tp.fasilitas.map((f) => FASILITAS[f].label);
+  let deskripsi = '';
+  for (let n = fas.length; n >= 0; n--) {
+    deskripsi = `Kamar kos ${tp.ukuran}, lantai ${k.lantai} khusus ${k.lantai === 1 ? 'putra' : 'putri'}, di ${KOS.nama} (rekaan)${n ? `: ${fas.slice(0, n).join(', ')}` : ''}. Jadwalkan survei.`;
+    if (deskripsi.length <= 155) break;
+  }
+  return meta({ judul: `Kamar ${k.id} Tipe ${tp.nama}, ${rupiah(tp.harga)}/bln · Grendel`, deskripsi, path: `/kamar/${k.id}` });
 }
 
 const ATURAN_INTI = [
